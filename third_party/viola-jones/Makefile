@@ -1,31 +1,43 @@
+# Compiler and flags
 GCC ?= g++
+CFLAGS := -Wall -Wextra -pedantic
+LDFLAGS :=
 
-HEADERS := image.h haar.h stdio-wrapper.h
+# Source and header files (using wildcards)
+SRC_C := $(wildcard *.c)
+SRC_CPP := $(wildcard *.cpp)
+HEADERS := $(wildcard *.h)
 
-all: build
+# Object files (derived from source files)
+OBJ_C := $(SRC_C:.c=.o)
+OBJ_CPP := $(SRC_CPP:.cpp=.o)
+OBJ := $(OBJ_C) $(OBJ_CPP)
 
-build: vj
+# Target executable
+TARGET := vj
 
-image.o: image.c $(HEADERS)
-	$(GCC) -o $@ -c $<
+# Default target
+all: $(TARGET)
 
-stdio.o: stdio-wrapper.c $(HEADERS)
-	$(GCC) -o $@ -c $<
+# Link
+$(TARGET): $(OBJ)
+	$(GCC) -o $@ $^ $(LDFLAGS)
 
-main.o: main.cpp $(HEADERS)
-	$(GCC) -o $@ -c $<
+# Compile C files
+%.o: %.c $(HEADERS)
+	$(GCC) $(CFLAGS) -c $< -o $@
 
-haar.o: haar.cpp $(HEADERS)
-	$(GCC) -o $@ -c $<
+# Compile C++ files
+%.o: %.cpp $(HEADERS)
+	$(GCC) $(CFLAGS) -c $< -o $@
 
-rectangles.o: rectangles.cpp $(HEADERS)
-	$(GCC) -o $@ -c $<
+# Run
+run: $(TARGET)
+	./$(TARGET)
 
-vj: main.o haar.o image.o stdio-wrapper.o rectangles.o
-	$(GCC) -o $@ $+ $(LDFLAGS)
-
-run: build
-	./vj
-
+# Clean up (Windows-specific, using cmd /c and rm)
 clean:
-	rm -f vj *.o Output.pgm
+	cmd /c "rm -f $(TARGET) $(OBJ) Output.pgm"
+
+# Phony targets
+.PHONY: all run clean
