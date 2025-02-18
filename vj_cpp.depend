@@ -1,0 +1,46 @@
+# depslib dependency file v1.0
+1445224787 source:c:\users\peter\documents\codeblocksprojects\vj_cpp\haar.cpp
+	"haar.h"
+	"image.h"
+	<stdio.h>
+	"stdio-wrapper.h"
+
+1354412264 c:\users\peter\documents\codeblocksprojects\vj_cpp\haar.h
+	<stdio.h>
+	<stdlib.h>
+	"image.h"
+	<vector>
+	"stdio-wrapper.h"
+
+1354222756 c:\users\peter\documents\codeblocksprojects\vj_cpp\image.h
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
+1354412206 c:\users\peter\documents\codeblocksprojects\vj_cpp\stdio-wrapper.h
+	<sysace_stdio.h>
+	<stdio.h>
+
+1444890396 source:c:\users\peter\documents\codeblocksprojects\vj_cpp\image.c
+	<stdio.h>
+	<string.h>
+	<ctype.h>
+	"image.h"
+	"stdio-wrapper.h"
+
+1354222754 source:c:\users\peter\documents\codeblocksprojects\vj_cpp\rectangles.cpp
+	"haar.h"
+
+1354412190 source:c:\users\peter\documents\codeblocksprojects\vj_cpp\stdio-wrapper.c
+	"stdio-wrapper.h"
+	<filestatus.h>
+	<sysace_stdio.h>
+	<fat.h>
+
+1445223651 source:c:\users\peter\documents\codeblocksprojects\vj_cpp\main.cpp
+	<stdio.h>
+	<stdlib.h>
+	"image.h"
+	"stdio-wrapper.h"
+	"haar.h"
+
