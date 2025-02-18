@@ -1,23 +1,31 @@
-CC    := g++
-CFLG  := -std=c20+
-LDFLG :=
+GCC ?= g++
 
-# CUDA Compiler and Flags
-NCC     := nvcc
-NCFLG   :=
-NCLDFLG :=
+HEADERS := image.h haar.h stdio-wrapper.h
 
-# Directories
-SRC_DIR = ./src
-INC_DIR = ./include
-OBJ_DIR = ./obj
+all: build
 
-# Not associated with files
-.PHONY: clean default build
+build: vj
 
-default: build test
+image.o: image.c $(HEADERS)
+	$(GCC) -o $@ -c $<
 
-build:
+stdio.o: stdio-wrapper.c $(HEADERS)
+	$(GCC) -o $@ -c $<
+
+main.o: main.cpp $(HEADERS)
+	$(GCC) -o $@ -c $<
+
+haar.o: haar.cpp $(HEADERS)
+	$(GCC) -o $@ -c $<
+
+rectangles.o: rectangles.cpp $(HEADERS)
+	$(GCC) -o $@ -c $<
+
+vj: main.o haar.o image.o stdio-wrapper.o rectangles.o
+	$(GCC) -o $@ $+ $(LDFLAGS)
+
+run: build
+	./vj
 
 clean:
-	$(RM) -f ./asdf
+	rm -f vj *.o Output.pgm
