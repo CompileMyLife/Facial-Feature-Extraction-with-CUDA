@@ -1,9 +1,8 @@
 // cuda_detect.cu
 //
 // This file implements a CUDA‐accelerated sliding window detector for the Viola‐Jones algorithm.
-// It contains device functions for cascade evaluation, the kernel that processes candidate windows,
-// and the runDetection() function that transfers host data to device memory, launches the kernel,
-// and retrieves results.
+// For debugging purposes, we've replaced the weak classifier evaluation with a dummy function
+// that always returns 1. This version removes any references to scaled_rectangles_array.
 
 #include "cuda_detect.h"
 #include <stdio.h>
@@ -12,49 +11,20 @@
 #include <device_launch_parameters.h>
 
 // ---------------------------------------------------------------------
-// Device classifier globals (placeholders).
+// Dummy device globals for classifier parameters (placeholders).
 // In a full implementation, you'll allocate and copy these arrays.
-// ---------------------------------------------------------------------
 __device__ int *d_stages_array; 
 __device__ int *d_stages_thresh_array;
 
-// Define scaled_rectangles_array as a device pointer.
-// For now, we leave it unallocated (NULL).
-__device__ int **scaled_rectangles_array = 0;
-
-// Device function: Evaluate one weak classifier for a candidate window.
-// For demonstration, if scaled_rectangles_array is NULL, return a dummy value.
-__device__ int evalWeakClassifier_device(int variance_norm_factor, int p_offset,
-                                           int tree_index, int w_index, int r_index)
+// Device function: Dummy weak classifier evaluation that always returns 1.
+__device__ int evalWeakClassifier_device(int /*variance_norm_factor*/, int /*p_offset*/,
+                                           int /*tree_index*/, int /*w_index*/, int /*r_index*/)
 {
-    // If scaled_rectangles_array is not set, return a dummy value.
-    if (scaled_rectangles_array == 0) {
-         return 1;
-    }
-
-    int t = d_stages_thresh_array[tree_index] * variance_norm_factor;
-    int sum = ( *(scaled_rectangles_array[r_index] + p_offset)
-              - *(scaled_rectangles_array[r_index + 1] + p_offset)
-              - *(scaled_rectangles_array[r_index + 2] + p_offset)
-              + *(scaled_rectangles_array[r_index + 3] + p_offset) )
-              * d_stages_array[w_index];
-    sum += ( *(scaled_rectangles_array[r_index+4] + p_offset)
-           - *(scaled_rectangles_array[r_index + 5] + p_offset)
-           - *(scaled_rectangles_array[r_index + 6] + p_offset)
-           + *(scaled_rectangles_array[r_index + 7] + p_offset) )
-           * d_stages_array[w_index + 1];
-    if (scaled_rectangles_array[r_index+8] != NULL)
-    {
-        sum += ( *(scaled_rectangles_array[r_index+8] + p_offset)
-               - *(scaled_rectangles_array[r_index + 9] + p_offset)
-               - *(scaled_rectangles_array[r_index + 10] + p_offset)
-               + *(scaled_rectangles_array[r_index + 11] + p_offset) )
-               * d_stages_array[w_index + 2];
-    }
-    return (sum >= t) ? 1 : 0;
+    return 1;
 }
 
 // Device function: Run the cascade classifier on a candidate window.
+// This version mimics runCascadeClassifier but uses our dummy weak classifier.
 __device__ int runCascadeClassifier_device(const myCascade *d_cascade, MyPoint p, int start_stage)
 {
     int p_offset = p.y * (d_cascade->sum.width) + p.x;
@@ -73,9 +43,10 @@ __device__ int runCascadeClassifier_device(const myCascade *d_cascade, MyPoint p
     int w_index = 0;
     int r_index = 0;
     int stage_sum = 0;
+    // For each stage, sum dummy weak classifier outputs.
     for (int i = start_stage; i < d_cascade->n_stages; i++) {
         stage_sum = 0;
-        int num_features = d_stages_array[i]; // assume each stage's feature count is stored here
+        int num_features = d_stages_array[i]; // Assume each stage's feature count is stored here
         for (int j = 0; j < num_features; j++) {
             stage_sum += evalWeakClassifier_device(variance_norm_factor, p_offset,
                                                      haar_counter, w_index, r_index);
@@ -84,10 +55,10 @@ __device__ int runCascadeClassifier_device(const myCascade *d_cascade, MyPoint p
             r_index += 12;
         }
         if (stage_sum < 0.4f * d_stages_thresh_array[i]) {
-            return -i; // Rejection at stage i.
+            return -i; // Reject candidate at stage i.
         }
     }
-    return 1; // Window passed all stages.
+    return 1; // Candidate passes all stages.
 }
 
 // CUDA kernel: Each thread processes one candidate window.

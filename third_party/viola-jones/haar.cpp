@@ -35,6 +35,7 @@
 #include "image.h"
 #include <stdio.h>
 #include "stdio-wrapper.h"
+#include <cmath>
 
 /* TODO: use matrices */
 /* classifier parameters */
@@ -72,7 +73,7 @@ void nearestNeighbor (MyImage *src, MyImage *dst);
 /* rounding function */
 inline  int  myRound( float value )
 {
-  return (int)(value + (value >= 0 ? 0.5 : -0.5));
+	return std::lroundf(value);
 }
 
 /*******************************************************
@@ -146,10 +147,12 @@ std::vector<MyRect> detectObjects( MyImage* _img, MySize minSize, MySize maxSize
       iter_counter++;
 
       /* size of the image scaled up */
-      MySize winSize = { myRound(winSize0.width*factor), myRound(winSize0.height*factor) };
+	  MySize winSize;
+	  winSize.width = myRound(winSize0.width * factor);
+	  winSize.height = myRound(winSize0.height * factor);
 
       /* size of the image scaled down (from bigger to smaller) */
-      MySize sz = { ( img->width/factor ), ( img->height/factor ) };
+      MySize sz = { myRound( img->width/factor ), myRound( img->height/factor ) };
 
       /* difference between sizes of the scaled image and the original detection window */
       MySize sz1 = { sz.width - winSize0.width, sz.height - winSize0.height };

@@ -252,6 +252,7 @@ int cpyPgm(MyImage* src, MyImage* dst)
 	{
 		dst->data[i] = src->data[i];
 	}
+	return 0;
 }
 
 
