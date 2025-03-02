@@ -37,6 +37,8 @@
 #include "stdio-wrapper.h"
 #include <cmath>
 
+#define DEBUG_PRINT 1
+
 /* TODO: use matrices */
 /* classifier parameters */
 /************************************
@@ -265,84 +267,302 @@ unsigned int int_sqrt (unsigned int value)
 }
 
 
-void setImageForCascadeClassifier( myCascade* _cascade, MyIntImage* _sum, MyIntImage* _sqsum)
+void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntImage* _sqsum)
 {
-  MyIntImage *sum = _sum;
-  MyIntImage *sqsum = _sqsum;
-  myCascade* cascade = _cascade;
-  int i, j, k;
-  MyRect equRect;
-  int r_index = 0;
-  int w_index = 0;
-  MyRect tr;
+    printf("-- Entering setImageForCascadeClassifier --\n"); // Added print
 
-  cascade->sum = *sum;
-  cascade->sqsum = *sqsum;
+    MyIntImage* sum = _sum;
+    MyIntImage* sqsum = _sqsum;
+    myCascade* cascade = _cascade;
+    int i, j, k;
+    MyRect equRect;
+    int r_index = 0;
+    int w_index = 0;
+    MyRect tr;
 
-  equRect.x = equRect.y = 0;
-  equRect.width = cascade->orig_window_size.width;
-  equRect.height = cascade->orig_window_size.height;
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->sum = *_sum; --\n"); // Debug print: Before assigning sum image
+    #endif
+        cascade->sum = *_sum; // Assign integral image struct to cascade
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->sum = *_sum; --\n"); // Debug print: After assigning sum image
+    #endif
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->sqsum = *_sqsum; --\n"); // Debug print: Before assigning squared sum image
+    #endif
+        cascade->sqsum = *_sqsum; // Assign squared integral image struct to cascade
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->sqsum = *_sqsum; --\n"); // Debug print: After assigning squared sum image
+    #endif
 
-  cascade->inv_window_area = equRect.width*equRect.height;
 
-  cascade->p0 = (sum->data) ;
-  cascade->p1 = (sum->data +  equRect.width - 1) ;
-  cascade->p2 = (sum->data + sum->width*(equRect.height - 1));
-  cascade->p3 = (sum->data + sum->width*(equRect.height - 1) + equRect.width - 1);
-  cascade->pq0 = (sqsum->data);
-  cascade->pq1 = (sqsum->data +  equRect.width - 1) ;
-  cascade->pq2 = (sqsum->data + sqsum->width*(equRect.height - 1));
-  cascade->pq3 = (sqsum->data + sqsum->width*(equRect.height - 1) + equRect.width - 1);
+    equRect.x = equRect.y = 0;
+    equRect.width = cascade->orig_window_size.width;
+    equRect.height = cascade->orig_window_size.height;
 
-  /****************************************
-   * Load the index of the four corners
-   * of the filter rectangle
-   **************************************/
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->inv_window_area = ...; --\n"); // Debug print: Before calculating inverse window area
+    #endif
+        cascade->inv_window_area = 1.0f / (equRect.width * equRect.height); // Calculate inverse of the window area for normalization
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->inv_window_area = ...; --\n"); // Debug print: After calculating inverse window area
+    #endif
 
-  /* loop over the number of stages */
-  for( i = 0; i < cascade->n_stages; i++ )
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->p0 = ...; --\n"); // Debug print: Before setting p0 pointer
+    #endif
+        cascade->p0 = (sum->data); // Pointer to the top-left corner of the integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->p0 = ...; --\n"); // Debug print: After setting p0 pointer
+    #endif
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->p1 = ...; --\n"); // Debug print: Before setting p1 pointer
+    #endif
+        cascade->p1 = (sum->data + equRect.width - 1); // Pointer to the top-right corner of the integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->p1 = ...; --\n"); // Debug print: After setting p1 pointer
+    #endif
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->p2 = ...; --\n"); // Debug print: Before setting p2 pointer
+    #endif
+        cascade->p2 = (sum->data + sum->width * (equRect.height - 1)); // Pointer to the bottom-left corner of the integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->p2 = ...; --\n"); // Debug print: After setting p2 pointer
+    #endif
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->p3 = ...; --\n"); // Debug print: Before setting p3 pointer
+    #endif
+        cascade->p3 = (sum->data + sum->width * (equRect.height - 1) + equRect.width - 1); // Pointer to the bottom-right corner of the integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->p3 = ...; --\n"); // Debug print: After setting p3 pointer
+    #endif
+
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->pq0 = ...; --\n"); // Debug print: Before setting pq0 pointer
+    #endif
+        cascade->pq0 = (sqsum->data); // Pointer to the top-left corner of the squared integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->pq0 = ...; --\n"); // Debug print: After setting pq0 pointer
+    #endif
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->pq1 = ...; --\n"); // Debug print: Before setting pq1 pointer
+    #endif
+        cascade->pq1 = (sqsum->data + equRect.width - 1); // Pointer to the top-right corner of the squared integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->pq1 = ...; --\n"); // Debug print: After setting pq1 pointer
+    #endif
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->pq2 = ...; --\n"); // Debug print: Before setting pq2 pointer
+    #endif
+        cascade->pq2 = (sqsum->data + sqsum->width * (equRect.height - 1)); // Pointer to the bottom-left corner of the squared integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->pq2 = ...; --\n"); // Debug print: After setting pq2 pointer
+    #endif
+    #ifdef DEBUG_PRINT
+        printf("-- Before cascade->pq3 = ...; --\n"); // Debug print: Before setting pq3 pointer
+    #endif
+        cascade->pq3 = (sqsum->data + sqsum->width * (equRect.height - 1) + equRect.width - 1); // Pointer to the bottom-right corner of the squared integral image
+    #ifdef DEBUG_PRINT
+        printf("-- After cascade->pq3 = ...; --\n"); // Debug print: After setting pq3 pointer
+    #endif
+
+    /****************************************
+     * Load the index of the four corners
+     * of the filter rectangle
+     **************************************/
+
+    #ifdef DEBUG_PRINT
+            printf("-- Starting stage loop in setImageForCascadeClassifier --\n");
+    #endif
+    /* loop over the number of stages */
+    for (i = 0; i < cascade->n_stages; i++)
     {
-      /* loop over the number of haar features */
-      for( j = 0; j < stages_array[i]; j++ )
-	{
-	  int nr = 3;
-	  /* loop over the number of rectangles */
-	  for( k = 0; k < nr; k++ )
-	    {
-	      tr.x = rectangles_array[r_index + k*4];
-	      tr.width = rectangles_array[r_index + 2 + k*4];
-	      tr.y = rectangles_array[r_index + 1 + k*4];
-	      tr.height = rectangles_array[r_index + 3 + k*4];
-	      if (k < 2)
-		{
-		  scaled_rectangles_array[r_index + k*4] = (sum->data + sum->width*(tr.y ) + (tr.x )) ;
-		  scaled_rectangles_array[r_index + k*4 + 1] = (sum->data + sum->width*(tr.y ) + (tr.x  + tr.width)) ;
-		  scaled_rectangles_array[r_index + k*4 + 2] = (sum->data + sum->width*(tr.y  + tr.height) + (tr.x ));
-		  scaled_rectangles_array[r_index + k*4 + 3] = (sum->data + sum->width*(tr.y  + tr.height) + (tr.x  + tr.width));
-		}
-	      else
-		{
-		  if ((tr.x == 0)&& (tr.y == 0) &&(tr.width == 0) &&(tr.height == 0))
-		    {
-		      scaled_rectangles_array[r_index + k*4] = NULL ;
-		      scaled_rectangles_array[r_index + k*4 + 1] = NULL ;
-		      scaled_rectangles_array[r_index + k*4 + 2] = NULL;
-		      scaled_rectangles_array[r_index + k*4 + 3] = NULL;
-		    }
-		  else
-		    {
-		      scaled_rectangles_array[r_index + k*4] = (sum->data + sum->width*(tr.y ) + (tr.x )) ;
-		      scaled_rectangles_array[r_index + k*4 + 1] = (sum->data + sum->width*(tr.y ) + (tr.x  + tr.width)) ;
-		      scaled_rectangles_array[r_index + k*4 + 2] = (sum->data + sum->width*(tr.y  + tr.height) + (tr.x ));
-		      scaled_rectangles_array[r_index + k*4 + 3] = (sum->data + sum->width*(tr.y  + tr.height) + (tr.x  + tr.width));
-		    }
-		} /* end of branch if(k<2) */
-	    } /* end of k loop*/
-	  r_index+=12;
-	  w_index+=3;
-	} /* end of j loop */
+        #ifdef DEBUG_PRINT
+                printf("  -- Stage: %d --\n", i);
+        #endif
+        /* loop over the number of haar features */
+        for (j = 0; j < cascade->stages_array[i]; j++)
+        {
+            #ifdef DEBUG_PRINT
+                        printf("    -- Feature: %d --\n", j);
+            #endif
+            int nr = 3;
+            /* loop over the number of rectangles */
+            for (k = 0; k < nr; k++)
+            {
+                #ifdef DEBUG_PRINT
+                                printf("      -- Rectangle: %d --\n", k); // Debug print: Rectangle number within feature
+                #endif
+                                MyRect tr; // Temporary rectangle struct
+                #ifdef DEBUG_PRINT
+                                printf("      -- Before tr.x = ...; --\n"); // Debug print: Before reading rectangle x
+                                printf("      -- Rectangle: %d --\n", k); // Debug print: Rectangle number within feature
+                                printf("      -- r_index: %d, k: %d, index: %d --\n", r_index, k, r_index + k * 4); // Debug print: Index for rectangles_array
+                #endif
+                                tr.x = cascade->rectangles_array[r_index + k * 4]; // Read rectangle x coordinate from array
+                #ifdef DEBUG_PRINT
+                                printf("      -- After tr.x = %d; --\n", tr.x); // Debug print: After reading rectangle x
+                #endif
+                #ifdef DEBUG_PRINT
+                                printf("      -- Before tr.width = ...; --\n"); // Debug print: Before reading rectangle width
+                #endif
+                                tr.width = cascade->rectangles_array[r_index + 2 + k * 4]; // Read rectangle width from array
+                #ifdef DEBUG_PRINT
+                                printf("      -- After tr.width = %d; --\n", tr.width); // Debug print: After reading rectangle width
+                #endif
+                #ifdef DEBUG_PRINT
+                                printf("      -- Before tr.y = ...; --\n"); // Debug print: Before reading rectangle y
+                #endif
+                                tr.y = cascade->rectangles_array[r_index + 1 + k * 4]; // Read rectangle y coordinate from array
+                #ifdef DEBUG_PRINT
+                                printf("      -- After tr.y = %d; --\n", tr.y); // Debug print: After reading rectangle y
+                #endif
+                #ifdef DEBUG_PRINT
+                                printf("      -- Before tr.height = ...; --\n"); // Debug print: Before reading rectangle height
+                #endif
+                                tr.height = cascade->rectangles_array[r_index + 3 + k * 4]; // Read rectangle height from array
+                #ifdef DEBUG_PRINT
+                                printf("      -- After tr.height = %d; --\n", tr.height); // Debug print: After reading rectangle height
+                                printf("      -- Before cascade->scaled_rectangles_array[r_index + k * 4] = ...; (k < 2 branch) --\n");
+                                printf("      -- r_index: %d, k: %d, index: %d --\n", r_index, k, r_index + k * 4); // ADD THIS
+                                printf("      -- tr.x: %d, tr.y: %d, tr.width: %d, tr.height: %d --\n", tr.x, tr.y, tr.width, tr.height); // ADD THIS
+                #endif
+
+                if (k < 2)
+                {
+                    #ifdef DEBUG_PRINT
+                                        //printf("      -- Before cascade->scaled_rectangles_array[r_index + k * 4] = ...; (k < 2 branch) --\n");
+                                        //printf("      -- r_index: %d, k: %d, index: %d --\n", r_index, k, r_index + k * 4); // Print index values
+                    #endif
+                                        cascade->scaled_rectangles_array[r_index + k * 4] = (int*)(sum->data + sum->width * (tr.y) + (tr.x));
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- After cascade->scaled_rectangles_array[r_index + k * 4] = %p; (k < 2 branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4]);
+                    #endif
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 1] = ...; (k < 2 branch) --\n");
+                    #endif
+                                        cascade->scaled_rectangles_array[r_index + k * 4 + 1] = (int*)(sum->data + sum->width * (tr.y) + (tr.x + tr.width));
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- After cascade->scaled_rectangles_array[r_index + k * 4 + 1] = %p; (k < 2 branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 1]);
+                    #endif
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 2] = ...; (k < 2 branch) --\n");
+                    #endif
+                                        cascade->scaled_rectangles_array[r_index + k * 4 + 2] = (int*)(sum->data + sum->width * (tr.y + tr.height) + (tr.x));
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- After cascade->scaled_rectangles_array[r_index + k * 4 + 2] = %p; (k < 2 branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 2]);
+                    #endif
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 3] = ...; (k < 2 branch) --\n");
+                    #endif
+                                        cascade->scaled_rectangles_array[r_index + k * 4 + 3] = (int*)(sum->data + sum->width * (tr.y + tr.height) + (tr.x + tr.width));
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- After cascade->scaled_rectangles_array[r_index + k * 4 + 3] = %p; (k < 2 branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 3]);
+                    #endif
+                }
+                else
+                {
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- Entering else branch (k >= 2) --\n");
+                    #endif
+                    if ((tr.x == 0) && (tr.y == 0) && (tr.width == 0) && (tr.height == 0))
+                    {
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Entering NULL assignment if block --\n");
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4] = NULL; --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4] = NULL;
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4] = %p; --\n", cascade->scaled_rectangles_array[r_index + k * 4]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 1] = NULL; --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4 + 1] = NULL;
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4 + 1] = %p; --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 1]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 2] = NULL; --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4 + 2] = NULL;
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4 + 2] = %p; --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 2]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 3] = NULL; --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4 + 3] = NULL;
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4 + 3] = %p; --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 3]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Exiting NULL assignment if block --\n");
+                        #endif
+                    }
+                    else
+                    {
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Entering non-NULL assignment else block --\n");
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4] = ...; (else branch) --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4] = (int*)(sum->data + sum->width * (tr.y) + (tr.x));
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4] = %p; (else branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 1] = ...; (else branch) --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4 + 1] = (int*)(sum->data + sum->width * (tr.y) + (tr.x + tr.width));
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4 + 1] = %p; (else branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 1]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 2] = ...; (else branch) --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4 + 2] = (int*)(sum->data + sum->width * (tr.y + tr.height) + (tr.x));
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4 + 2] = %p; (else branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 2]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Before cascade->scaled_rectangles_array[r_index + k * 4 + 3] = ...; (else branch) --\n");
+                        #endif
+                                                cascade->scaled_rectangles_array[r_index + k * 4 + 3] = (int*)(sum->data + sum->width * (tr.y + tr.height) + (tr.x + tr.width));
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- After cascade->scaled_rectangles_array[r_index + k * 4 + 3] = %p; (else branch) --\n", cascade->scaled_rectangles_array[r_index + k * 4 + 3]);
+                        #endif
+                        #ifdef DEBUG_PRINT
+                                                printf("        -- Exiting non-NULL assignment else block --\n");
+                        #endif 
+                    }
+                    #ifdef DEBUG_PRINT
+                                        printf("      -- Exiting else branch (k >= 2) --\n");
+                    #endif
+                } /* end of branch if(k<2) */
+                #ifdef DEBUG_PRINT
+                                printf("      -- After if (k < 2) ... else ... --\n");
+                #endif
+            } /* end of k loop*/
+            #ifdef DEBUG_PRINT
+                        printf("    -- After k loop: rectangle loop --\n");
+            #endif
+            r_index += 12;
+            w_index += 3;
+        } /* end of j loop */
+        #ifdef DEBUG_PRINT
+                printf("  -- After j loop: feature loop --\n");
+        #endif
     } /* end i loop */
+    #ifdef DEBUG_PRINT
+        printf("-- After i loop: stage loop --\n");
+        printf("-- Exiting setImageForCascadeClassifier --\n"); // Added print
+    #endif
 }
+
 
 
 /****************************************************
@@ -659,136 +879,188 @@ void nearestNeighbor (MyImage *src, MyImage *dst)
     }
 }
 
-void readTextClassifier()//(myCascade * cascade)
+void readTextClassifier(myCascade* cascade) // Modified function to accept myCascade*
 {
-  /*number of stages of the cascade classifier*/
-  int stages;
-  /*total number of weak classifiers (one node each)*/
-  int total_nodes = 0;
-  int i, j, k, l;
-  char mystring [12];
-  int r_index = 0;
-  int w_index = 0;
-  int tree_index = 0;
-  FILE *finfo = fopen("info.txt", "rb");
+    /*number of stages of the cascade classifier*/
+    int stages;
+    /*total number of weak classifiers (one node each)*/
+    int total_nodes = 0;
+    int i, j, k, l;
+    char mystring[12];
+    int r_index = 0;
+    int w_index = 0;
+    int tree_index = 0;
+    FILE* finfo = fopen("info.txt", "rb");
 
-  /**************************************************
-  * how many stages are in the cascaded filter?
-  * the first line of info.txt is the number of stages
-  * (in the 5kk73 example, there are 25 stages)
-  **************************************************/
-  if ( fgets (mystring , 12 , finfo) != NULL )
-    {
-      stages = atoi(mystring);
+    printf("-- Entering readTextClassifier --\n"); // Added print
+
+    if (finfo == NULL) { // Check if file opened successfully
+        printf("Error opening info.txt!\n");
+        return; // Exit if file not opened
     }
-  i = 0;
+    printf("Successfully opened info.txt\n"); // Added print
 
-  stages_array = (int *)malloc(sizeof(int)*stages);
-
-  /**************************************************
-   * how many filters in each stage?
-   * They are specified in info.txt,
-   * starting from second line.
-   * (in the 5kk73 example, from line 2 to line 26)
-   *************************************************/
-  while ( fgets (mystring , 12 , finfo) != NULL )
+    /**************************************************
+    * how many stages are in the cascaded filter?
+    * the first line of info.txt is the number of stages
+    * (in the 5kk73 example, there are 25 stages)
+    **************************************************/
+    if (fgets(mystring, 12, finfo) != NULL)
     {
-      stages_array[i] = atoi(mystring);
-      total_nodes += stages_array[i];
-      i++;
+        stages = atoi(mystring);
+        printf("Number of stages read: %d\n", stages); // Added print
     }
-  fclose(finfo);
+    else {
+        printf("Error reading number of stages from info.txt!\n");
+        fclose(finfo);
+        return;
+    }
+    i = 0;
+
+    int* stages_array = (int*)malloc(sizeof(int) * stages); // Local variable, not static global
+    cascade->stages_array = stages_array;                 // Assign to cascade struct member
 
 
-  /* TODO: use matrices where appropriate */
-  /***********************************************
-   * Allocate a lot of array structures
-   * Note that, to increase parallelism,
-   * some arrays need to be splitted or duplicated
-   **********************************************/
-  rectangles_array = (int *)malloc(sizeof(int)*total_nodes*12);
-  scaled_rectangles_array = (int **)malloc(sizeof(int*)*total_nodes*12);
-  weights_array = (int *)malloc(sizeof(int)*total_nodes*3);
-  alpha1_array = (int*)malloc(sizeof(int)*total_nodes);
-  alpha2_array = (int*)malloc(sizeof(int)*total_nodes);
-  tree_thresh_array = (int*)malloc(sizeof(int)*total_nodes);
-  stages_thresh_array = (int*)malloc(sizeof(int)*stages);
-  FILE *fp = fopen("class.txt", "rb");
+    /**************************************************
+     * how many filters in each stage?
+     * They are specified in info.txt,
+     * starting from second line.
+     * (in the 5kk73 example, from line 2 to line 26)
+     *************************************************/
+    printf("-- Reading stages array from info.txt --\n"); // Added print
+    while (fgets(mystring, 12, finfo) != NULL)
+    {
+        stages_array[i] = atoi(mystring);
+        printf("Stage %d filters: %d\n", i, stages_array[i]); // Added print
+        total_nodes += stages_array[i];
+        i++;
+    }
+    fclose(finfo);
+    printf("-- Finished reading stages array from info.txt --\n"); // Added print
 
-  /******************************************
-   * Read the filter parameters in class.txt
-   *
-   * Each stage of the cascaded filter has:
-   * 18 parameter per filter x tilter per stage
-   * + 1 threshold per stage
-   *
-   * For example, in 5kk73,
-   * the first stage has 9 filters,
-   * the first stage is specified using
-   * 18 * 9 + 1 = 163 parameters
-   * They are line 1 to 163 of class.txt
-   *
-   * The 18 parameters for each filter are:
-   * 1 to 4: coordinates of rectangle 1
-   * 5: weight of rectangle 1
-   * 6 to 9: coordinates of rectangle 2
-   * 10: weight of rectangle 2
-   * 11 to 14: coordinates of rectangle 3
-   * 15: weight of rectangle 3
-   * 16: threshold of the filter
-   * 17: alpha 1 of the filter
-   * 18: alpha 2 of the filter
-   ******************************************/
 
-  /* loop over n of stages */
-  for (i = 0; i < stages; i++)
+    /* TODO: use matrices where appropriate */
+    /***********************************************
+     * Allocate a lot of array structures
+     * Note that, to increase parallelism,
+     * some arrays need to be splitted or duplicated
+     **********************************************/
+    int* rectangles_array = (int*)malloc(sizeof(int) * total_nodes * 12); // Local variable
+    cascade->rectangles_array = rectangles_array;                     // Assign to cascade struct member
+
+    int** scaled_rectangles_array = (int**)malloc(sizeof(int*) * total_nodes * 12); // Local variable - Note: Is this used in CUDA? If not, can be removed.
+    cascade->scaled_rectangles_array = scaled_rectangles_array; // Assign to cascade struct member
+
+    int* weights_array = (int*)malloc(sizeof(int) * total_nodes * 3); // Local variable
+    cascade->weights_array = weights_array;                       // Assign to cascade struct member
+
+    int* alpha1_array = (int*)malloc(sizeof(int) * total_nodes);   // Local variable
+    cascade->alpha1_array = alpha1_array;                         // Assign to cascade struct member
+
+    int* alpha2_array = (int*)malloc(sizeof(int) * total_nodes);   // Local variable
+    cascade->alpha2_array = alpha2_array;                         // Assign to cascade struct member
+
+    int* tree_thresh_array = (int*)malloc(sizeof(int) * total_nodes); // Local variable
+    cascade->tree_thresh_array = tree_thresh_array;                   // Assign to cascade struct member
+
+    float* stages_thresh_array = (float*)malloc(sizeof(float) * stages); // Local variable - Note: Changed to float* to match myCascade struct
+    cascade->stages_thresh_array = stages_thresh_array;                 // Assign to cascade struct member
+
+
+    FILE* fp = fopen("class.txt", "rb");
+    if (fp == NULL) { // Check if file opened successfully
+        printf("Error opening class.txt!\n");
+        return; // Exit if file not opened
+    }
+    printf("Successfully opened class.txt\n"); // Added print
+
+    printf("-- Reading classifier parameters from class.txt --\n"); // Added print
+
+    /******************************************
+     * Read the filter parameters in class.txt
+     * ... (rest of the parameter reading code is the same) ...
+     ******************************************/
+
+    /* loop over n of stages */
+    for (i = 0; i < stages; i++)
     {    /* loop over n of trees */
-      for (j = 0; j < stages_array[i]; j++)
-	{	/* loop over n of rectangular features */
-	  for(k = 0; k < 3; k++)
-	    {	/* loop over the n of vertices */
-	      for (l = 0; l <4; l++)
-		{
-		  if (fgets (mystring , 12 , fp) != NULL)
-		    rectangles_array[r_index] = atoi(mystring);
-		  else
-		    break;
-		  r_index++;
-		} /* end of l loop */
-	      if (fgets (mystring , 12 , fp) != NULL)
-		{
-		  weights_array[w_index] = atoi(mystring);
-		  /* Shift value to avoid overflow in the haar evaluation */
-		  /*TODO: make more general */
-		  /*weights_array[w_index]>>=8; */
-		}
-	      else
-		break;
-	      w_index++;
-	    } /* end of k loop */
-	  if (fgets (mystring , 12 , fp) != NULL)
-	    tree_thresh_array[tree_index]= atoi(mystring);
-	  else
-	    break;
-	  if (fgets (mystring , 12 , fp) != NULL)
-	    alpha1_array[tree_index]= atoi(mystring);
-	  else
-	    break;
-	  if (fgets (mystring , 12 , fp) != NULL)
-	    alpha2_array[tree_index]= atoi(mystring);
-	  else
-	    break;
-	  tree_index++;
-	  if (j == stages_array[i]-1)
-	    {
-	      if (fgets (mystring , 12 , fp) != NULL)
-		stages_thresh_array[i] = atoi(mystring);
-	      else
-		break;
-	    }
-	} /* end of j loop */
+        for (j = 0; j < stages_array[i]; j++)
+        {    /* loop over n of rectangular features */
+            for (k = 0; k < 3; k++)
+            {    /* loop over the n of vertices */
+                for (l = 0; l < 4; l++)
+                {
+                    if (fgets(mystring, 12, fp) != NULL) {
+                        rectangles_array[r_index] = atoi(mystring);
+                        //printf("rectangles_array[%d] = %d\n", r_index, rectangles_array[r_index]); // Added print
+                    }
+                    else {
+                        printf("Error reading rectangles_array at index %d from class.txt!\n", r_index);
+                        fclose(fp);
+                        return;
+                    }
+                    r_index++;
+                } /* end of l loop */
+                if (fgets(mystring, 12, fp) != NULL)
+                {
+                    weights_array[w_index] = atoi(mystring);
+                    //printf("weights_array[%d] = %d\n", w_index, weights_array[w_index]); // Added print
+                    /* Shift value to avoid overflow in the haar evaluation */
+                    /*TODO: make more general */
+                    /*weights_array[w_index]>>=8; */
+                }
+                else {
+                    printf("Error reading weights_array at index %d from class.txt!\n", w_index);
+                    fclose(fp);
+                    return;
+                }
+                w_index++;
+            } /* end of k loop */
+            if (fgets(mystring, 12, fp) != NULL) {
+                tree_thresh_array[tree_index] = atoi(mystring);
+                //printf("tree_thresh_array[%d] = %d\n", tree_index, tree_thresh_array[tree_index]); // Added print
+            }
+            else {
+                printf("Error reading tree_thresh_array at index %d from class.txt!\n", tree_index);
+                fclose(fp);
+                return;
+            }
+            if (fgets(mystring, 12, fp) != NULL) {
+                alpha1_array[tree_index] = atoi(mystring);
+                //printf("alpha1_array[%d] = %d\n", tree_index, alpha1_array[tree_index]); // Added print
+            }
+            else {
+                printf("Error reading alpha1_array at index %d from class.txt!\n", tree_index);
+                fclose(fp);
+                return;
+            }
+            if (fgets(mystring, 12, fp) != NULL) {
+                alpha2_array[tree_index] = atoi(mystring);
+                //printf("alpha2_array[%d] = %d\n", tree_index, alpha2_array[tree_index]); // Added print
+            }
+            else {
+                printf("Error reading alpha2_array at index %d from class.txt!\n", tree_index);
+                fclose(fp);
+                return;
+            }
+            tree_index++;
+            if (j == stages_array[i] - 1)
+            {
+                if (fgets(mystring, 12, fp) != NULL) {
+                    stages_thresh_array[i] = atoi(mystring);
+                    //printf("stages_thresh_array[%d] = %f\n", i, stages_thresh_array[i]); // Added print - Changed to %f for float
+                }
+                else {
+                    printf("Error reading stages_thresh_array at index %d from class.txt!\n", i);
+                    fclose(fp);
+                    return;
+                }
+            }
+        } /* end of j loop */
     } /* end of i loop */
-  fclose(fp);
+    fclose(fp);
+    printf("-- Finished reading classifier parameters from class.txt --\n"); // Added print
+    printf("-- Exiting readTextClassifier --\n"); // Added print
 }
 
 

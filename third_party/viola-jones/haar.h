@@ -81,6 +81,17 @@ extern "C" {
         MyIntImage sqsum;
         sqsumtype* pq0, * pq1, * pq2, * pq3;
         sumtype* p0, * p1, * p2, * p3;
+
+        // Added members for CUDA implementation:
+        int* stages_array;         // Array to store number of weak classifiers per stage
+        float* stages_thresh_array;    // Array to store stage thresholds
+        int* rectangles_array;       // Array to store rectangle features
+        int* weights_array;          // Array to store weights
+        int* alpha1_array;         // Array to store alpha1 values
+        int* alpha2_array;         // Array to store alpha2 values
+        int* tree_thresh_array;      // Array to store tree thresholds
+		int** scaled_rectangles_array;  // Array to store scaled rectangles
+
     } myCascade;
 
     /* C-Compatible Function Declarations */
@@ -92,7 +103,7 @@ extern "C" {
     int runCascadeClassifier(myCascade* cascade, MyPoint pt, int start_stage);
 
     /* Reads the classifier file into memory */
-    void readTextClassifier();
+    void readTextClassifier(myCascade* cascade);
 
     /* Releases classifier resources */
     void releaseTextClassifier();

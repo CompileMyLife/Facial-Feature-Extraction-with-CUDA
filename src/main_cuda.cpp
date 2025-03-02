@@ -1,6 +1,6 @@
 #include "image.h"
 #include "haar.h"
-#include "cuda_detect.h"  // Make sure this header declares detectObjects()
+#include "cuda_detect.h"  // runDetection is declared here.
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +12,7 @@
 int main() {
     printf("-- entering main function --\n");
 
+    // Check CUDA device availability.
     int deviceCount = 0;
     cudaError_t cudaStatus = cudaGetDeviceCount(&deviceCount);
     if (cudaStatus != cudaSuccess || deviceCount == 0) {
@@ -46,31 +47,45 @@ int main() {
     // 3. Initialize the cascade classifier.
     myCascade cascadeObj;
     myCascade* cascade = &cascadeObj;
-    // Set classifier properties:
     cascade->n_stages = 25;
     cascade->total_nodes = 2913;
     cascade->orig_window_size.width = 24;
     cascade->orig_window_size.height = 24;
+    // (You can adjust minSize/maxSize if needed)
     MySize minSize = { 20, 20 };
     MySize maxSize = { 0, 0 };
 
     printf("-- loading cascade classifier --\n");
-    readTextClassifier();
+    readTextClassifier(cascade);
+    printf("-- cascade classifier loaded --\n"); // Added print
+
+    if (cascade->scaled_rectangles_array == NULL) { // Add this check
+        printf("ERROR: cascade->scaled_rectangles_array is NULL after readTextClassifier!\n");
+    }
+    else {
+        printf("cascade->scaled_rectangles_array is NOT NULL after readTextClassifier: %p\n", cascade->scaled_rectangles_array); // Print the pointer value
+    }
 
     // 4. Link integral images to the cascade.
+    printf("-- linking integral images to cascade --\n"); // Added print
+    printf("-- Before setImageForCascadeClassifier call --\n"); // Added print
     setImageForCascadeClassifier(cascade, sum, sqsum);
+    printf("-- After setImageForCascadeClassifier call --\n"); // Added print
+    printf("-- integral images linked to cascade --\n"); // Added print
 
-    // 5. Run detection (using detectObjects which returns a vector of rectangles).
+    // 5. Run CUDA detection.
     float scaleFactor = 1.2f;
-    int minNeighbours = 1;
-    printf("-- detecting faces --\n");
-    std::vector<MyRect> result = detectObjects(image, minSize, maxSize, cascade, scaleFactor, minNeighbours);
+    int maxCandidates = 10000;  // Adjust as needed.
+    printf("-- detecting faces using CUDA --\n");
+    printf("-- Before runDetection call --\n"); // Added print
+    std::vector<MyRect> result = runDetection(sum, sqsum, cascade, maxCandidates, scaleFactor);
+    printf("-- After runDetection call --\n"); // Added print
+    printf("-- face detection using CUDA complete --\n"); // Added print
     printf("Number of detected faces: %zu\n", result.size());
 
     // 6. Draw detected face boxes on the image.
     for (size_t i = 0; i < result.size(); i++) {
-        MyRect r = result[i];
-        drawRectangle(image, r);
+        drawRectangle(image, result[i]);
     }
 
     // 7. Save the output image.
