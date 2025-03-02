@@ -3,7 +3,7 @@
 // This file implements a CUDA‐accelerated sliding window detector for the Viola‐Jones algorithm.
 // This version implements the real weak classifier evaluation and uses device memory for classifier parameters.
 
-#include "cuda_detect.h" // Include header file for CUDA detection
+#include "cuda_detect.cuh" // Include header file for CUDA detection
 #include <stdio.h>      // Standard input/output library
 #include <math.h>       // Math functions (e.g., sqrtf)
 #include <cuda_runtime.h> // CUDA runtime library
