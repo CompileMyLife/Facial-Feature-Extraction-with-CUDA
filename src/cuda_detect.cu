@@ -14,7 +14,8 @@
 
 // Uncomment to enable extra CUDA debug prints.
 //#define DEBUG_CUDA_PRINTS
-#define DEBUG_CUDA_PRINTS2
+//#define DEBUG_CUDA_PRINTS2
+#define DEBUG_CUDA_PRINTS3
 
 #ifdef DEBUG_CUDA_PRINTS
 #define DEV_PRINT(...) do { \
@@ -40,8 +41,8 @@ __constant__ int* d_stages_array;
 __constant__ float* d_stages_thresh_array;
 __constant__ int* d_rectangles_array;
 __constant__ int* d_weights_array;
-__constant__ int* d_alpha1_array;
-__constant__ int* d_alpha2_array;
+__constant__ float* d_alpha1_array;
+__constant__ float* d_alpha2_array;
 __constant__ int* d_tree_thresh_array;
 
 // ---------------------------------------------------------------------
@@ -65,7 +66,7 @@ __device__ int myAtomicAdd(int* address, int val) {
 // Assumes that for each feature, d_rectangles_array stores 12 ints in the order:
 // [x_offset1, y_offset1, width1, height1, x_offset2, y_offset2, width2, height2,
 //  x_offset3, y_offset3, width3, height3]
-__device__ int evalWeakClassifier_device(const myCascade* d_cascade, int variance_norm_factor, MyPoint p,
+__device__ float evalWeakClassifier_device(const myCascade* d_cascade, int variance_norm_factor, MyPoint p,
     int haar_counter, int w_index, int r_index)
 {
 
@@ -193,7 +194,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
         total_sum += sum3 * d_weights_array[w_index + 2];
     }
 
-    int t = d_tree_thresh_array[haar_counter] * variance_norm_factor;
+    int t =d_tree_thresh_array[haar_counter] * (variance_norm_factor);
 #ifdef DEBUG_CUDA_PRINTS
     if ((p.x % 100 == 0) && (p.y % 100 == 0))
         printf("[Device] Weak classifier: total_sum=%d, threshold=%d, candidate=(%d,%d) returns %d\n",
@@ -201,7 +202,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
             (total_sum >= t ? d_alpha2_array[haar_counter] : d_alpha1_array[haar_counter]));
 #endif
 
-    return (total_sum >= t ? d_alpha2_array[haar_counter] : d_alpha1_array[haar_counter]);
+    return (total_sum >= t) ? (float)d_alpha2_array[haar_counter] : (float)d_alpha1_array[haar_counter];
 }
 
 
@@ -257,6 +258,13 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
                 (p.y >= 693 && p.y < 693 + 307)) {
                 printf("[Device DEBUG] ROI Candidate (%d,%d): Stage %d, Feature %d: result = %d\n", p.x, p.y, i, j, feature_result);
             }
+#endif
+
+#ifdef DEBUG_CUDA_PRINTS3
+            if (p.x == 2015 && p.y == 863) {  // Same location as CPU
+                printf("[GPU DEBUG] Candidate (%d,%d), Stage 0, Feature 0: response = %d\n", p.x, p.y, feature_result);
+            }
+
 #endif
             stage_sum += feature_result;
             haar_counter++;
