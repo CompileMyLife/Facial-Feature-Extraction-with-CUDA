@@ -13,7 +13,7 @@
 #include <assert.h>         // For device-side assertions
 
 // Uncomment to enable extra CUDA debug prints.
-#define DEBUG_CUDA_PRINTS
+//#define DEBUG_CUDA_PRINTS
 
 #ifdef DEBUG_CUDA_PRINTS
 #define DEV_PRINT(...) do { \
@@ -68,7 +68,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
     int haar_counter, int w_index, int r_index)
 {
 
-    printf("[Device] entered evalWeakClassifier_device\n");
+    //printf("[Device] entered evalWeakClassifier_device\n");
 
     // Print candidate coordinates for every 100th candidate
 #ifdef DEBUG_CUDA_PRINTS
@@ -88,8 +88,8 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
     // If candidate is near the right or bottom edge, print unconditionally:
     if (p.x > d_cascade->sum.width - 200 || p.y > d_cascade->sum.height - 200) {
        
-        printf("[Device DEBUG] Candidate=(%d,%d): Rect1 computed: tl=(%d,%d), br=(%d,%d)\n",
-            p.x, p.y, tl1_x, tl1_y, br1_x, br1_y);
+        /*printf("[Device DEBUG] Candidate=(%d,%d): Rect1 computed: tl=(%d,%d), br=(%d,%d)\n",
+            p.x, p.y, tl1_x, tl1_y, br1_x, br1_y);*/
     }
 
 #ifdef DEBUG_CUDA_PRINTS
@@ -208,7 +208,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
 // Device function: Run the cascade classifier on a candidate window.
 __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum, const myCascade* d_cascade, MyPoint p, int start_stage)
 {   
-    printf("[Device DEBUG] Entered runCascadeClassifier_device, p=(%d,%d), start_stage=%d\n", p.x, p.y, start_stage);
+    //printf("[Device DEBUG] Entered runCascadeClassifier_device, p=(%d,%d), start_stage=%d\n", p.x, p.y, start_stage);
 
     // Ensure candidate window is within bounds.
     assert(p.x >= 0 && p.x < d_cascade->sum.width);
