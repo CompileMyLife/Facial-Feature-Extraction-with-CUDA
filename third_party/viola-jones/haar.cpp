@@ -329,20 +329,20 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
         printf("  -- Stage: %d --\n", i);
         for (j = 0; j < cascade->stages_array[i]; j++)
         {
-            printf("    -- Feature: %d --\n", j);
+            //printf("    -- Feature: %d --\n", j);
             int nr = 3;  // Number of rectangles per feature
             for (k = 0; k < nr; k++)
             {
-                printf("      -- Rectangle: %d --\n", k);
+                //printf("      -- Rectangle: %d --\n", k);
                 // Read the rectangle parameters from the classifier array.
                 tr.x = cascade->rectangles_array[r_index + k * 4];
-                printf("      -- tr.x = %d; --\n", tr.x);
+                //printf("      -- tr.x = %d; --\n", tr.x);
                 tr.y = cascade->rectangles_array[r_index + 1 + k * 4];
-                printf("      -- tr.y = %d; --\n", tr.y);
+                //printf("      -- tr.y = %d; --\n", tr.y);
                 tr.width = cascade->rectangles_array[r_index + 2 + k * 4];
-                printf("      -- tr.width = %d; --\n", tr.width);
+                //printf("      -- tr.width = %d; --\n", tr.width);
                 tr.height = cascade->rectangles_array[r_index + 3 + k * 4];
-                printf("      -- tr.height = %d; --\n", tr.height);
+                //printf("      -- tr.height = %d; --\n", tr.height);
 
                 // Set up the scaled rectangle pointers.
                 // For the first two rectangles, always compute the pointer.
@@ -380,7 +380,7 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
                     }
                 }
             }
-            printf("    -- Finished processing feature, updating indices --\n");
+            //printf("    -- Finished processing feature, updating indices --\n");
             r_index += 12;  // 3 rectangles × 4 parameters each
             w_index += 3;   // 3 weights per feature
         }
