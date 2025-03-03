@@ -3,7 +3,6 @@
 // This file implements a CUDA‐accelerated sliding window detector for the Viola‐Jones algorithm.
 // This version implements the real weak classifier evaluation and uses Unified Memory for the integral images,
 // cascade structure, and detection results.
-
 #include "cuda_detect.h"    // Include header file for CUDA detection
 #include <stdio.h>          // Standard I/O
 #include <math.h>           // Math functions
@@ -88,6 +87,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
 
     // If candidate is near the right or bottom edge, print unconditionally:
     if (p.x > d_cascade->sum.width - 200 || p.y > d_cascade->sum.height - 200) {
+       
         printf("[Device DEBUG] Candidate=(%d,%d): Rect1 computed: tl=(%d,%d), br=(%d,%d)\n",
             p.x, p.y, tl1_x, tl1_y, br1_x, br1_y);
     }
@@ -206,8 +206,10 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
 
 // ---------------------------------------------------------------------
 // Device function: Run the cascade classifier on a candidate window.
-__device__ int runCascadeClassifier_device(const myCascade* d_cascade, MyPoint p, int start_stage)
-{
+__device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum, const myCascade* d_cascade, MyPoint p, int start_stage)
+{   
+    printf("[Device DEBUG] Entered runCascadeClassifier_device, p=(%d,%d), start_stage=%d\n", p.x, p.y, start_stage);
+
     // Ensure candidate window is within bounds.
     assert(p.x >= 0 && p.x < d_cascade->sum.width);
     assert(p.y >= 0 && p.y < d_cascade->sum.height);
@@ -265,6 +267,7 @@ __device__ int runCascadeClassifier_device(const myCascade* d_cascade, MyPoint p
     return 1;
 }
 
+
 // ---------------------------------------------------------------------
 // CUDA kernel: Each thread processes one candidate window.
 __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
@@ -272,6 +275,8 @@ __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
     int x_max, int y_max,
     MyRect* d_candidates, int* d_candidateCount)
 {
+	//printf("[Device] entered detectKernel\n");
+
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -287,7 +292,7 @@ __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
         printf("[Device DEBUG] Processing candidate window at (%d,%d)\n", x, y);
 #endif
 
-    int result = runCascadeClassifier_device(&d_cascade, p, 0);
+    int result = runCascadeClassifier_device(d_sum, d_sqsum, &d_cascade, p, 0);
 #ifdef DEBUG_CUDA_PRINTS
     if (x % 100 == 0 && y % 100 == 0)
         printf("[Device DEBUG] runCascadeClassifier_device returned: %d for window (%d,%d)\n", result, x, y);
@@ -335,24 +340,22 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     d_sqsum->height = h_sqsum->height;
     printf("[DEBUG] d_sqsum allocated at %p; dimensions: width=%d, height=%d\n", (void*)d_sqsum, d_sqsum->width, d_sqsum->height);
 
+    // --- Step 5: Allocate Unified Memory for the cascade structure ---
+    myCascade* d_cascade = nullptr;
+    CUDA_CHECK(cudaMallocManaged((void**)&d_cascade, sizeof(myCascade)));
+    *d_cascade = *cascade;
+    printf("[Host DEBUG] d_cascade allocated at %p, n_stages=%d, total_nodes=%d\n", (void*)d_cascade, d_cascade->n_stages, d_cascade->total_nodes);
+
+
     // --- Step 3: Update the cascade with Unified Memory pointers for integral images ---
-    cascade->p0 = d_sum->data;
-    cascade->p1 = d_sum->data + (d_sum->width - 1);
-    cascade->p2 = d_sum->data + (d_sum->width * (d_sum->height - 1));
-    cascade->p3 = d_sum->data + (d_sum->width * (d_sum->height - 1) + (d_sum->width - 1));
-    cascade->pq0 = d_sqsum->data;
-    cascade->pq1 = d_sqsum->data + (d_sqsum->width - 1);
-    cascade->pq2 = d_sqsum->data + (d_sqsum->width * (d_sqsum->height - 1));
-    cascade->pq3 = d_sqsum->data + (d_sqsum->width * (d_sqsum->height - 1) + (d_sqsum->width - 1));
-    printf("[Host] Updated cascade pointers for integral images:\n");
-    printf("  p0  = %p\n", (void*)cascade->p0);
-    printf("  p1  = %p\n", (void*)cascade->p1);
-    printf("  p2  = %p\n", (void*)cascade->p2);
-    printf("  p3  = %p\n", (void*)cascade->p3);
-    printf("  pq0 = %p\n", (void*)cascade->pq0);
-    printf("  pq1 = %p\n", (void*)cascade->pq1);
-    printf("  pq2 = %p\n", (void*)cascade->pq2);
-    printf("  pq3 = %p\n", (void*)cascade->pq3);
+        // Copy MyIntImage structs themselves
+    d_cascade->sum = *d_sum;
+    d_cascade->sqsum = *d_sqsum;
+
+    // Now, correct the data pointers within d_cascade->sum and d_cascade->sqsum
+    d_cascade->sum.data = d_sum->data;   // Point to the Unified Memory data buffer of d_sum
+    d_cascade->sqsum.data = d_sqsum->data; // Point to the Unified Memory data buffer of d_sqsum
+
 
     // --- Step 4: Transfer classifier parameters to device memory ---
     int* d_stages_array_dev = nullptr;
@@ -399,11 +402,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     CUDA_CHECK(cudaMemcpyToSymbol(d_tree_thresh_array, &d_tree_thresh_array_dev, sizeof(int*)));
     printf("[Host DEBUG] Transferred classifier parameters to device constant memory.\n");
 
-    // --- Step 5: Allocate Unified Memory for the cascade structure ---
-    myCascade* d_cascade = nullptr;
-    CUDA_CHECK(cudaMallocManaged((void**)&d_cascade, sizeof(myCascade)));
-    *d_cascade = *cascade;
-    printf("[Host DEBUG] d_cascade allocated at %p, n_stages=%d, total_nodes=%d\n", (void*)d_cascade, d_cascade->n_stages, d_cascade->total_nodes);
+   
 
     // --- Step 6: Allocate Unified Memory for detection results ---
     MyRect* d_candidates = nullptr;
@@ -416,8 +415,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
 
     // --- Step 7: Determine search space dimensions and launch the detection kernel ---
     // Define margin values
-    const int margin_x = 5000;  // maximum extra x offset from a rectangle feature
-    const int margin_y = 5000;  // maximum extra y offset from a rectangle feature
+    const int margin_x = 30;  // maximum extra x offset from a rectangle feature
+    const int margin_y = 30;  // maximum extra y offset from a rectangle feature
 
     // Compute search space with additional margins:
     int x_max = d_sum->width - cascade->orig_window_size.width - margin_x;
@@ -452,13 +451,24 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
         (void*)&d_candidateCount   // Pass the unified memory pointer directly.
     };
 
-    // Debug print kernel arguments.
-    printf("[DEBUG] h_sumStruct.data = %p\n", (void*)h_sumStruct.data);
-    printf("[DEBUG] h_sqsumStruct.data = %p\n", (void*)h_sqsumStruct.data);
-    printf("[DEBUG] h_cascadeStruct.p0 = %p\n", (void*)h_cascadeStruct.p0);
-    printf("[DEBUG] scaleFactor = %f, x_max = %d, y_max = %d\n", scaleFactor, x_max, y_max);
-    printf("[DEBUG] d_candidates = %p\n", (void*)d_candidates);
-    printf("[DEBUG] d_candidateCount = %p, initial value = %d\n", (void*)d_candidateCount, *d_candidateCount);
+    // --- Debug prints to verify device pointers and kernel arguments ---
+    printf("[DEBUG] Verifying device pointers and kernel arguments:\n");
+    printf("    h_sumStruct.data = %p\n", (void*)h_sumStruct.data);
+    printf("    h_sqsumStruct.data = %p\n", (void*)h_sqsumStruct.data);
+    printf("    h_cascadeStruct.p0 = %p\n", (void*)h_cascadeStruct.p0);
+    printf("    h_cascadeStruct.p1 = %p\n", (void*)h_cascadeStruct.p1);
+    printf("    h_cascadeStruct.p2 = %p\n", (void*)h_cascadeStruct.p2);
+    printf("    h_cascadeStruct.p3 = %p\n", (void*)h_cascadeStruct.p3);
+    printf("    h_cascadeStruct.pq0 = %p\n", (void*)h_cascadeStruct.pq0);
+    printf("    h_cascadeStruct.pq1 = %p\n", (void*)h_cascadeStruct.pq1);
+    printf("    h_cascadeStruct.pq2 = %p\n", (void*)h_cascadeStruct.pq2);
+    printf("    h_cascadeStruct.pq3 = %p\n", (void*)h_cascadeStruct.pq3);
+
+    printf("    scaleFactor = %f\n", scaleFactor);
+    printf("    x_max = %d, y_max = %d\n", x_max, y_max);
+
+    printf("    d_candidates pointer = %p\n", (void*)d_candidates);
+    printf("    d_candidateCount pointer = %p, initial value = %d\n", (void*)d_candidateCount, *d_candidateCount);
 
     cudaError_t launchErr = cudaLaunchKernel((const void*)detectKernel, gridDim, blockDim, kernelArgs, 0, 0);
     if (launchErr != cudaSuccess) {
@@ -466,6 +476,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     }
 
     printf("[Host DEBUG] Kernel launched.\n");
+
+
 
     cudaError_t syncErr = cudaDeviceSynchronize();
     if (syncErr != cudaSuccess) {
