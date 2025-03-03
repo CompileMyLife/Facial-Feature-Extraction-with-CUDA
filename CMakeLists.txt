@@ -14,7 +14,6 @@ find_package(CUDA REQUIRED)
 
 # Include directories.
 include_directories(
-    ${PROJECT_SOURCE_DIR}/third_party/viola-jones
     ${PROJECT_SOURCE_DIR}/include
     ${CUDA_INCLUDE_DIRS}
 )
@@ -23,9 +22,9 @@ include_directories(
 set(SRC_FILES
     ${PROJECT_SOURCE_DIR}/src/cuda_detect.cu
     ${PROJECT_SOURCE_DIR}/src/main_cuda.cpp
-    ${PROJECT_SOURCE_DIR}/third_party/viola-jones/image.c
-    ${PROJECT_SOURCE_DIR}/third_party/viola-jones/haar.cpp
-    ${PROJECT_SOURCE_DIR}/third_party/viola-jones/rectangles.cpp
+    ${PROJECT_SOURCE_DIR}/src/image.c
+    ${PROJECT_SOURCE_DIR}/src/haar.cpp
+    ${PROJECT_SOURCE_DIR}/src/rectangles.cpp
 )
 
 # Create the executable target.

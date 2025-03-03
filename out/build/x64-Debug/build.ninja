@@ -53,7 +53,7 @@ build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\cuda_detect.cu.obj: CUD
   DEFINES = -D_CRT_SECURE_NO_WARNINGS
   DEP_FILE = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\cuda_detect.cu.obj.d
   FLAGS = -D_WINDOWS -Xcompiler=" /GR /EHsc" -Xcompiler=" -Zi -Ob0 -Od /RTC1" -std=c++14 "--generate-code=arch=compute_52,code=[compute_52,sm_52]" -Xcompiler=-MDd -g -G -arch=sm_86
-  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
+  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
   OBJECT_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir
   OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\
@@ -62,36 +62,36 @@ build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\cuda_detect.cu.obj: CUD
 build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\main_cuda.cpp.obj: CXX_COMPILER__FacialFeatureExtractionWithCUDA_unscanned_Debug C$:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\src\main_cuda.cpp || cmake_object_order_depends_target_FacialFeatureExtractionWithCUDA
   DEFINES = -D_CRT_SECURE_NO_WARNINGS
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++14 -MDd /std:c++14 /Zi /Od
-  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
+  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
   OBJECT_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir
   OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\
   TARGET_PDB = FacialFeatureExtractionWithCUDA.pdb
 
-build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones\image.c.obj: C_COMPILER__FacialFeatureExtractionWithCUDA_unscanned_Debug C$:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones\image.c || cmake_object_order_depends_target_FacialFeatureExtractionWithCUDA
+build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\image.c.obj: C_COMPILER__FacialFeatureExtractionWithCUDA_unscanned_Debug C$:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\src\image.c || cmake_object_order_depends_target_FacialFeatureExtractionWithCUDA
   DEFINES = -D_CRT_SECURE_NO_WARNINGS
   FLAGS = /DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1 -MDd
-  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
+  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
   OBJECT_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir
-  OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones
+  OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\
   TARGET_PDB = FacialFeatureExtractionWithCUDA.pdb
 
-build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones\haar.cpp.obj: CXX_COMPILER__FacialFeatureExtractionWithCUDA_unscanned_Debug C$:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones\haar.cpp || cmake_object_order_depends_target_FacialFeatureExtractionWithCUDA
+build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\haar.cpp.obj: CXX_COMPILER__FacialFeatureExtractionWithCUDA_unscanned_Debug C$:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\src\haar.cpp || cmake_object_order_depends_target_FacialFeatureExtractionWithCUDA
   DEFINES = -D_CRT_SECURE_NO_WARNINGS
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++14 -MDd /std:c++14 /Zi /Od
-  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
+  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
   OBJECT_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir
-  OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones
+  OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\
   TARGET_PDB = FacialFeatureExtractionWithCUDA.pdb
 
-build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones\rectangles.cpp.obj: CXX_COMPILER__FacialFeatureExtractionWithCUDA_unscanned_Debug C$:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones\rectangles.cpp || cmake_object_order_depends_target_FacialFeatureExtractionWithCUDA
+build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\rectangles.cpp.obj: CXX_COMPILER__FacialFeatureExtractionWithCUDA_unscanned_Debug C$:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\src\rectangles.cpp || cmake_object_order_depends_target_FacialFeatureExtractionWithCUDA
   DEFINES = -D_CRT_SECURE_NO_WARNINGS
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++14 -MDd /std:c++14 /Zi /Od
-  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\third_party\viola-jones -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
+  INCLUDES = -IC:\Users\rober\Desktop\588\Facial-Feature-Extraction-with-CUDA\include -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"
   OBJECT_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir
-  OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones
+  OBJECT_FILE_DIR = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\FacialFeatureExtractionWithCUDA.dir\
   TARGET_PDB = FacialFeatureExtractionWithCUDA.pdb
 
@@ -103,7 +103,7 @@ build CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones\rec
 #############################################
 # Link the executable FacialFeatureExtractionWithCUDA.exe
 
-build FacialFeatureExtractionWithCUDA.exe: CXX_EXECUTABLE_LINKER__FacialFeatureExtractionWithCUDA_Debug CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\cuda_detect.cu.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\main_cuda.cpp.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones\image.c.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones\haar.cpp.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\third_party\viola-jones\rectangles.cpp.obj
+build FacialFeatureExtractionWithCUDA.exe: CXX_EXECUTABLE_LINKER__FacialFeatureExtractionWithCUDA_Debug CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\cuda_detect.cu.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\main_cuda.cpp.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\image.c.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\haar.cpp.obj CMakeFiles\FacialFeatureExtractionWithCUDA.dir\src\rectangles.cpp.obj
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -MDd
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console  /MACHINE:X64
   LINK_LIBRARIES = cudadevrt.lib  cudart_static.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib

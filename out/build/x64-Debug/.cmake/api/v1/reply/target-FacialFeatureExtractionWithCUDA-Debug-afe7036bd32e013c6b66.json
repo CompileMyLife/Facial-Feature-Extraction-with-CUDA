@@ -31,19 +31,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 32,
+				"line" : 31,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 55,
+				"line" : 54,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 45,
+				"line" : 44,
 				"parent" : 0
 			},
 			{
@@ -55,13 +55,13 @@
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 41,
+				"line" : 40,
 				"parent" : 0
 			},
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 37,
+				"line" : 36,
 				"parent" : 0
 			}
 		]
@@ -96,10 +96,6 @@
 			],
 			"includes" : 
 			[
-				{
-					"backtrace" : 4,
-					"path" : "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/third_party/viola-jones"
-				},
 				{
 					"backtrace" : 4,
 					"path" : "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/include"
@@ -153,10 +149,6 @@
 			[
 				{
 					"backtrace" : 4,
-					"path" : "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/third_party/viola-jones"
-				},
-				{
-					"backtrace" : 4,
 					"path" : "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/include"
 				},
 				{
@@ -196,10 +188,6 @@
 			],
 			"includes" : 
 			[
-				{
-					"backtrace" : 4,
-					"path" : "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/third_party/viola-jones"
-				},
 				{
 					"backtrace" : 4,
 					"path" : "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/include"
@@ -291,19 +279,19 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 2,
-			"path" : "third_party/viola-jones/image.c",
+			"path" : "src/image.c",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 1,
-			"path" : "third_party/viola-jones/haar.cpp",
+			"path" : "src/haar.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 1,
-			"path" : "third_party/viola-jones/rectangles.cpp",
+			"path" : "src/rectangles.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],
