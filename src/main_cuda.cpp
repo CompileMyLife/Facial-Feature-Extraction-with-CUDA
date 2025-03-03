@@ -57,30 +57,29 @@ int main() {
 
     printf("-- loading cascade classifier --\n");
     readTextClassifier(cascade);
-    printf("-- cascade classifier loaded --\n"); // Added print
+    printf("-- cascade classifier loaded --\n");
 
-    if (cascade->scaled_rectangles_array == NULL) { // Add this check
+    if (cascade->scaled_rectangles_array == NULL) {
         printf("ERROR: cascade->scaled_rectangles_array is NULL after readTextClassifier!\n");
-    }
-    else {
-        printf("cascade->scaled_rectangles_array is NOT NULL after readTextClassifier: %p\n", cascade->scaled_rectangles_array); // Print the pointer value
+    } else {
+        printf("cascade->scaled_rectangles_array is NOT NULL after readTextClassifier: %p\n", cascade->scaled_rectangles_array);
     }
 
     // 4. Link integral images to the cascade.
-    printf("-- linking integral images to cascade --\n"); // Added print
-    printf("-- Before setImageForCascadeClassifier call --\n"); // Added print
+    printf("-- linking integral images to cascade --\n");
+    printf("-- Before setImageForCascadeClassifier call --\n");
     setImageForCascadeClassifier(cascade, sum, sqsum);
-    printf("-- After setImageForCascadeClassifier call --\n"); // Added print
-    printf("-- integral images linked to cascade --\n"); // Added print
+    printf("-- After setImageForCascadeClassifier call --\n");
+    printf("-- integral images linked to cascade --\n");
 
     // 5. Run CUDA detection.
     float scaleFactor = 1.2f;
     int maxCandidates = 10000;  // Adjust as needed.
     printf("-- detecting faces using CUDA --\n");
-    printf("-- Before runDetection call --\n"); // Added print
+    printf("-- Before runDetection call --\n");
     std::vector<MyRect> result = runDetection(sum, sqsum, cascade, maxCandidates, scaleFactor);
-    printf("-- After runDetection call --\n"); // Added print
-    printf("-- face detection using CUDA complete --\n"); // Added print
+    printf("-- After runDetection call --\n");
+    printf("-- face detection using CUDA complete --\n");
     printf("Number of detected faces: %zu\n", result.size());
 
     // 6. Draw detected face boxes on the image.
@@ -99,6 +98,9 @@ int main() {
     // 8. Clean up.
     releaseTextClassifier();
     freeImage(image);
+    // Free the integral image memory.
+    freeSumImage(sum);
+    freeSumImage(sqsum);
 
     return 0;
 }

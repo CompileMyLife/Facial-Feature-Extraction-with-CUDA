@@ -1,0 +1,15 @@
+# ninja log v6
+13	85	7626640834332624	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/third_party/viola-jones/image.c.obj	5e9e39594d9a6b47
+17	201	7626729974033562	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/third_party/viola-jones/haar.cpp.obj	96d694b84b5a4bd9
+2040	2171	7626757060085539	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10
+13	213	7626729973993502	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/main_cuda.cpp.obj	3bb2c94ec29271ed
+21	209	7626729974068602	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/third_party/viola-jones/rectangles.cpp.obj	dfaa97491c90571f
+9	2039	7626757039780481	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
+18	2049	7626758767231399	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
+2050	2243	7626758787551611	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10
+10	2267	7626771652269376	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
+2268	2397	7626771674854077	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10
+27	1971	7626775147658324	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
+1972	2101	7626775167115172	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10
+8	1974	7626776160549840	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
+1975	2099	7626776180213195	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10

@@ -76,7 +76,7 @@ extern "C" {
         int total_nodes;
         float scale;
         MySize orig_window_size;
-        int inv_window_area;
+        float inv_window_area;
         MyIntImage sum;
         MyIntImage sqsum;
         sqsumtype* pq0, * pq1, * pq2, * pq3;
@@ -127,4 +127,4 @@ std::vector<MyRect> detectObjects(MyImage* image, MySize minSize, MySize maxSize
 void groupRectangles(std::vector<MyRect>& _vec, int groupThreshold, float eps);
 #endif
 
-#endif // __HAAR_H__
+#endif // __HAAR_H

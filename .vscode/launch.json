@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+
+        {
+            "name": "gdb",
+            "type": "cuda-gdb",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/face_detect_cuda.exe",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "environment": []
+        },
+        {
+            "name": "CUDA C++: Attach",
+            "type": "cuda-gdb",
+            "request": "attach"
+        }
+    ]
+}
