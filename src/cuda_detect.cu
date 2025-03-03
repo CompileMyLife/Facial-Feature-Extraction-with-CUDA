@@ -14,6 +14,7 @@
 
 // Uncomment to enable extra CUDA debug prints.
 //#define DEBUG_CUDA_PRINTS
+#define DEBUG_CUDA_PRINTS2
 
 #ifdef DEBUG_CUDA_PRINTS
 #define DEV_PRINT(...) do { \
@@ -207,9 +208,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
 // ---------------------------------------------------------------------
 // Device function: Run the cascade classifier on a candidate window.
 __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum, const myCascade* d_cascade, MyPoint p, int start_stage)
-{   
-    //printf("[Device DEBUG] Entered runCascadeClassifier_device, p=(%d,%d), start_stage=%d\n", p.x, p.y, start_stage);
-
+{
     // Ensure candidate window is within bounds.
     assert(p.x >= 0 && p.x < d_cascade->sum.width);
     assert(p.y >= 0 && p.y < d_cascade->sum.height);
@@ -251,8 +250,15 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
         for (int j = 0; j < num_features; j++) {
             // Make sure we don't exceed the total number of nodes.
             assert(haar_counter < d_cascade->total_nodes);
-            // Evaluate the weak classifier for this feature.
-            stage_sum += evalWeakClassifier_device(d_cascade, var_norm, p, haar_counter, w_index, r_index);
+            // Compute the feature response.
+            int feature_result = evalWeakClassifier_device(d_cascade, var_norm, p, haar_counter, w_index, r_index);
+#ifdef DEBUG_CUDA_PRINTS2
+            if ((p.x >= 2619 && p.x < 2619 + 316) &&
+                (p.y >= 693 && p.y < 693 + 307)) {
+                printf("[Device DEBUG] ROI Candidate (%d,%d): Stage %d, Feature %d: result = %d\n", p.x, p.y, i, j, feature_result);
+            }
+#endif
+            stage_sum += feature_result;
             haar_counter++;
             w_index += 3;    // advance the weight index by 3 (since 3 weights per feature)
             r_index += 12;   // advance the rectangle index by 12 (since 12 ints per feature)
@@ -266,6 +272,7 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
     }
     return 1;
 }
+
 
 
 // ---------------------------------------------------------------------
@@ -287,13 +294,13 @@ __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
     p.x = x;
     p.y = y;
 
-#ifdef DEBUG_CUDA_PRINTS
+#ifdef DEBUG_CUDA_PRINTS2
     if (x % 100 == 0 && y % 100 == 0)
         printf("[Device DEBUG] Processing candidate window at (%d,%d)\n", x, y);
 #endif
 
     int result = runCascadeClassifier_device(d_sum, d_sqsum, &d_cascade, p, 0);
-#ifdef DEBUG_CUDA_PRINTS
+#ifdef DEBUG_CUDA_PRINTS2
     if (x % 100 == 0 && y % 100 == 0)
         printf("[Device DEBUG] runCascadeClassifier_device returned: %d for window (%d,%d)\n", result, x, y);
 #endif
@@ -483,16 +490,45 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     printf("    d_candidates pointer = %p\n", (void*)d_candidates);
     printf("    d_candidateCount pointer = %p, initial value = %d\n", (void*)d_candidateCount, *d_candidateCount);
 
+    printf("--- Debug: GPU stages_array (first 10 elements) ---\n");
+    for (int i = 0; i < 10; i++) {
+        printf("  stages_array[%d] = %d\n", i, d_cascade->stages_array[i]);
+    }
+
+    printf("--- Debug: GPU stages_thresh_array (first 10 elements) ---\n");
+    for (int i = 0; i < 10; i++) {
+        printf("  stages_thresh_array[%d] = %f\n", i, d_cascade->stages_thresh_array[i]);
+    }
+
+    printf("--- Debug: GPU rectangles_array (first 10 elements) ---\n");
+    for (int i = 0; i < 10; i++) {
+        printf("  rectangles_array[%d] = %d\n", i, d_cascade->rectangles_array[i]);
+    }
+
+    printf("--- Debug: GPU weights_array (first 10 elements) ---\n");
+    for (int i = 0; i < 10; i++) {
+        printf("  weights_array[%d] = %d\n", i, d_cascade->weights_array[i]);
+    }
+
+    printf("[Host DEBUG] Synchronizing before kernel launch...\n");
+    fflush(stdout);
+
+    cudaError_t syncErr = cudaDeviceSynchronize();
+    if (syncErr != cudaSuccess) {
+        printf("[Host] Kernel execution error: %s\n", cudaGetErrorString(syncErr));
+    }
+
     cudaError_t launchErr = cudaLaunchKernel((const void*)detectKernel, gridDim, blockDim, kernelArgs, 0, 0);
     if (launchErr != cudaSuccess) {
         printf("[Host] cudaLaunchKernel error: %s\n", cudaGetErrorString(launchErr));
     }
 
     printf("[Host DEBUG] Kernel launched.\n");
+    fflush(stdout);
 
 
 
-    cudaError_t syncErr = cudaDeviceSynchronize();
+    syncErr = cudaDeviceSynchronize();
     if (syncErr != cudaSuccess) {
         printf("[Host] Kernel execution error: %s\n", cudaGetErrorString(syncErr));
     }
