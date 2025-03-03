@@ -77,7 +77,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
             p.x, p.y, haar_counter, w_index, r_index);
 #endif
 
-    int* rect = d_rectangles_array + r_index * 12;
+    int* rect = d_rectangles_array + r_index;
 
     // --- First Rectangle ---
     int tl1_x = p.x + rect[0];
@@ -121,7 +121,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
 #endif
 
     int sum1 = d_cascade->p0[idx_br1] - d_cascade->p0[idx_tr1] - d_cascade->p0[idx_bl1] + d_cascade->p0[idx_tl1];
-    sum1 = sum1 * d_weights_array[w_index * 3 + 0];
+    sum1 = sum1 * d_weights_array[w_index + 0];
 
     // --- Second Rectangle ---
     int tl2_x = p.x + rect[4];
@@ -155,12 +155,12 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
 #endif
 
     int sum2 = d_cascade->p0[idx_br2] - d_cascade->p0[idx_tr2] - d_cascade->p0[idx_bl2] + d_cascade->p0[idx_tl2];
-    sum2 = sum2 + d_weights_array[w_index * 3 + 1];
+    sum2 = sum2 + d_weights_array[w_index + 1];
 
     int total_sum = sum1 + sum2;
 
     // --- Third Rectangle (if present) ---
-    if (d_weights_array[w_index * 3 + 2] != 0)
+    if (d_weights_array[w_index + 2] != 0)
     {
         int tl3_x = p.x + rect[8];
         int tl3_y = p.y + rect[9];
@@ -189,7 +189,7 @@ __device__ int evalWeakClassifier_device(const myCascade* d_cascade, int varianc
                 idx_tl3, idx_tr3, idx_bl3, idx_br3);
 #endif
         int sum3 = d_cascade->p0[idx_br3] - d_cascade->p0[idx_tr3] - d_cascade->p0[idx_bl3] + d_cascade->p0[idx_tl3];
-        total_sum += sum3 * d_weights_array[w_index * 3 + 2];
+        total_sum += sum3 * d_weights_array[w_index + 2];
     }
 
     int t = d_tree_thresh_array[haar_counter] * variance_norm_factor;
@@ -249,13 +249,13 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
             printf("[Device DEBUG] Stage %d: num_features=%d\n", i, num_features);
 #endif
         for (int j = 0; j < num_features; j++) {
+            // Make sure we don't exceed the total number of nodes.
             assert(haar_counter < d_cascade->total_nodes);
-            assert(w_index < d_cascade->total_nodes);
-            assert(r_index < d_cascade->total_nodes);
+            // Evaluate the weak classifier for this feature.
             stage_sum += evalWeakClassifier_device(d_cascade, var_norm, p, haar_counter, w_index, r_index);
             haar_counter++;
-            w_index++;
-            r_index++;
+            w_index += 3;    // advance the weight index by 3 (since 3 weights per feature)
+            r_index += 12;   // advance the rectangle index by 12 (since 12 ints per feature)
         }
 #ifdef DEBUG_CUDA_PRINTS
         if ((p.x % 100 == 0) && (p.y % 100 == 0))
@@ -355,6 +355,19 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     // Now, correct the data pointers within d_cascade->sum and d_cascade->sqsum
     d_cascade->sum.data = d_sum->data;   // Point to the Unified Memory data buffer of d_sum
     d_cascade->sqsum.data = d_sqsum->data; // Point to the Unified Memory data buffer of d_sqsum
+
+    // Update cascade corner pointers to reflect the new unified memory pointers
+    int winW = d_cascade->orig_window_size.width;
+    int winH = d_cascade->orig_window_size.height;
+    d_cascade->p0 = d_cascade->sum.data;
+    d_cascade->p1 = d_cascade->sum.data + winW - 1;
+    d_cascade->p2 = d_cascade->sum.data + d_cascade->sum.width * (winH - 1);
+    d_cascade->p3 = d_cascade->sum.data + d_cascade->sum.width * (winH - 1) + (winW - 1);
+
+    d_cascade->pq0 = d_cascade->sqsum.data;
+    d_cascade->pq1 = d_cascade->sqsum.data + winW - 1;
+    d_cascade->pq2 = d_cascade->sqsum.data + d_cascade->sqsum.width * (winH - 1);
+    d_cascade->pq3 = d_cascade->sqsum.data + d_cascade->sqsum.width * (winH - 1) + (winW - 1);
 
 
     // --- Step 4: Transfer classifier parameters to device memory ---
