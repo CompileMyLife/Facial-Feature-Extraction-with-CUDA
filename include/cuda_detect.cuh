@@ -3,6 +3,10 @@
 
 #include "haar.h"
 #include "image.h"
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+#include <string.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 #include <vector>
