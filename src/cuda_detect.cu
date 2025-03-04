@@ -288,7 +288,8 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
 __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
     myCascade d_cascade, float factor,
     int x_max, int y_max,
-    MyRect* d_candidates, int* d_candidateCount)
+    MyRect* d_candidates, int* d_candidateCount,
+    int maxCandidates)
 {
 	//printf("[Device] entered detectKernel\n");
 
@@ -320,7 +321,9 @@ __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
         r.width = (int)roundf(d_cascade.orig_window_size.width * factor);
         r.height = (int)roundf(d_cascade.orig_window_size.height * factor);
         int idx = myAtomicAdd(d_candidateCount, 1);
-        d_candidates[idx] = r;
+        if (idx < maxCandidates) {
+            d_candidates[idx] = r;
+        }
 #ifdef DEBUG_CUDA_PRINTS
         if (x % 100 == 0 && y % 100 == 0)
             printf("[Device DEBUG] Candidate added at index %d for window (%d,%d)\n", idx, x, y);
@@ -476,7 +479,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
         (void*)&x_max,
         (void*)&y_max,
         (void*)&d_candidates,      // Pass the unified memory pointer directly.
-        (void*)&d_candidateCount   // Pass the unified memory pointer directly.
+        (void*)&d_candidateCount,   // Pass the unified memory pointer directly.
+		(void*)&maxCandidates
     };
 
     // --- Debug prints to verify device pointers and kernel arguments ---
