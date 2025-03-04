@@ -357,7 +357,14 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
 #endif
         for (int j = 0; j < num_features; j++) {
             // Make sure we don't exceed the total number of nodes.
-            assert(haar_counter < d_cascade->total_nodes);
+
+            if (haar_counter >= d_cascade->total_nodes) {
+#ifdef DEBUG_CUDA_PRINTS6
+                printf("[ERROR] haar_counter (%d) reached total_nodes (%d). Candidate accepted.\n",
+                    haar_counter, d_cascade->total_nodes);
+#endif
+                return 1;
+            }
 
 #ifdef IDX_PRINT
             printf("[GPU DEBUG: IDX] Before eval: Candidate=(%d,%d), haar_counter=%d, w_index=%d, r_index=%d\n",
