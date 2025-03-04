@@ -27,13 +27,34 @@ __constant__ int* d_stages_array;
 __constant__ float* d_stages_thresh_array;
 __constant__ int* d_rectangles_array;
 __constant__ int* d_weights_array;
-__constant__ float* d_alpha1_array;
-__constant__ float* d_alpha2_array;
+__constant__ int* d_alpha1_array;
+__constant__ int* d_alpha2_array;
 __constant__ int* d_tree_thresh_array;
 
 // ---------------------------------------------------------------------
 // Declaration of atomicCAS.
 extern __device__ int atomicCAS(int* address, int compare, int val);
+
+
+// ---------------------------------------------------------------------
+// Device function: square root for integers.
+__device__ int int_sqrt_device(int value) {
+    int i;
+    unsigned int a = 0, b = 0, c = 0;
+    for (i = 0; i < (32 >> 1); i++) {
+        c <<= 2;
+        c += (value >> 30); // upper 2 bits of value
+        value <<= 2;
+        a <<= 1;
+        b = (a << 1) | 1;
+        if (c >= b) {
+            c -= b;
+            a++;
+        }
+    }
+    return a;
+}
+
 
 // ---------------------------------------------------------------------
 // Device function: Evaluate a weak classifier for candidate window p.
@@ -119,7 +140,7 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 
     int t =d_tree_thresh_array[haar_counter] * (variance_norm_factor);
 
-    return (total_sum >= t) ? (float)d_alpha2_array[haar_counter] : (float)d_alpha1_array[haar_counter];
+    return (total_sum >= t) ? d_alpha2_array[haar_counter] : d_alpha1_array[haar_counter];
 }
 
 
@@ -146,7 +167,7 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
 
     var_norm = (var_norm * d_cascade->inv_window_area) - mean * mean;
     if (var_norm > 0)
-        var_norm = (unsigned int)sqrtf((float)var_norm);
+		var_norm = int_sqrt_device(var_norm);
     else
         var_norm = 1;
 
@@ -168,12 +189,14 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
             // Compute the feature response.
             int feature_result = evalWeakClassifier_device(d_cascade, var_norm, p, 
                 haar_counter, w_index, r_index, scaleFactor);
-            stage_sum += feature_result;
-            haar_counter++;
-            w_index += 3;    // advance the weight index by 3 (since 3 weights per feature)
-            r_index += 12;   // advance the rectangle index by 12 (since 12 ints per feature)
+                stage_sum += feature_result;
+                haar_counter++;
+                w_index += 3;    // advance the weight index by 3 (since 3 weights per feature)
+                r_index += 12;   // advance the rectangle index by 12 (since 12 ints per feature)
         }
-        if (stage_sum < d_stages_thresh_array[i])
+
+        /* the number "0.4" is empirically chosen for 5kk73 */
+        if (stage_sum < 0.4*d_stages_thresh_array[i])
             return -i;
     }
     return 1;
