@@ -397,41 +397,41 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
  * More info:
  * http://en.wikipedia.org/wiki/Haar-like_features
  ***************************************************/
-inline int evalWeakClassifier(int variance_norm_factor, int p_offset, int tree_index, int w_index, int r_index )
+inline int evalWeakClassifier(myCascade* cascade, int variance_norm_factor, int p_offset, int tree_index, int w_index, int r_index )
 {
 
   /* the node threshold is multiplied by the standard deviation of the image */
-  int t = tree_thresh_array[tree_index] * variance_norm_factor;
+  int t = cascade->tree_thresh_array[tree_index] * variance_norm_factor;
 
-  int sum = (*(scaled_rectangles_array[r_index] + p_offset)
-	     - *(scaled_rectangles_array[r_index + 1] + p_offset)
-	     - *(scaled_rectangles_array[r_index + 2] + p_offset)
-	     + *(scaled_rectangles_array[r_index + 3] + p_offset))
-    * weights_array[w_index];
+  int sum = (*(cascade->scaled_rectangles_array[r_index] + p_offset)
+      - *(cascade->scaled_rectangles_array[r_index + 1] + p_offset)
+      - *(cascade->scaled_rectangles_array[r_index + 2] + p_offset)
+      + *(cascade->scaled_rectangles_array[r_index + 3] + p_offset))
+      * cascade->weights_array[w_index];
 
 //printf("sum1: %d\n",sum);
 
-  sum += (*(scaled_rectangles_array[r_index+4] + p_offset)
-	  - *(scaled_rectangles_array[r_index + 5] + p_offset)
-	  - *(scaled_rectangles_array[r_index + 6] + p_offset)
-	  + *(scaled_rectangles_array[r_index + 7] + p_offset))
-    * weights_array[w_index + 1];
+  sum += (*(cascade->scaled_rectangles_array[r_index + 4] + p_offset)
+      - *(cascade->scaled_rectangles_array[r_index + 5] + p_offset)
+      - *(cascade->scaled_rectangles_array[r_index + 6] + p_offset)
+      + *(cascade->scaled_rectangles_array[r_index + 7] + p_offset))
+      * cascade->weights_array[w_index + 1];
 
 //printf("sum2: %d\n",sum);
 
-  if ((scaled_rectangles_array[r_index+8] != NULL))
-    sum += (*(scaled_rectangles_array[r_index+8] + p_offset)
-	    - *(scaled_rectangles_array[r_index + 9] + p_offset)
-	    - *(scaled_rectangles_array[r_index + 10] + p_offset)
-	    + *(scaled_rectangles_array[r_index + 11] + p_offset))
-      * weights_array[w_index + 2];
+  if (cascade->scaled_rectangles_array[r_index + 8] != NULL)
+      sum += (*(cascade->scaled_rectangles_array[r_index + 8] + p_offset)
+          - *(cascade->scaled_rectangles_array[r_index + 9] + p_offset)
+          - *(cascade->scaled_rectangles_array[r_index + 10] + p_offset)
+          + *(cascade->scaled_rectangles_array[r_index + 11] + p_offset))
+      * cascade->weights_array[w_index + 2];
 
 //printf("sum3: %d\n",sum);
 
   if(sum >= t)
-    return alpha2_array[tree_index];
+    return cascade->alpha2_array[tree_index];
   else
-    return alpha1_array[tree_index];
+    return cascade->alpha1_array[tree_index];
 
 }
 
@@ -511,12 +511,12 @@ int runCascadeClassifier( myCascade* _cascade, MyPoint pt, int start_stage )
        ***************************************************/
       stage_sum = 0;
 
-      for( j = 0; j < stages_array[i]; j++ )
+      for( j = 0; j < cascade->stages_array[i]; j++ )
 	{
 	  /**************************************************
 	   * Send the shifted window to a haar filter.
 	   **************************************************/
-	  stage_sum += evalWeakClassifier(variance_norm_factor, p_offset, haar_counter, w_index, r_index);
+	  stage_sum += evalWeakClassifier(cascade, variance_norm_factor, p_offset, haar_counter, w_index, r_index);
 	  n_features++;
 	  haar_counter++;
 	  w_index+=3;
@@ -532,7 +532,7 @@ int runCascadeClassifier( myCascade* _cascade, MyPoint pt, int start_stage )
        **************************************************************/
 
       /* the number "0.4" is empirically chosen for 5kk73 */
-      if( stage_sum < 0.4*stages_thresh_array[i] ){
+      if( stage_sum < 0.4 * cascade->stages_thresh_array[i] ){
 	return -i;
       } /* end of the per-stage thresholding */
     } /* end of i loop */
@@ -890,15 +890,15 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
 }
 
 
-void releaseTextClassifier()
+void releaseTextClassifier(myCascade* cascade)
 {
-  free(stages_array);
-  free(rectangles_array);
-  free(scaled_rectangles_array);
-  free(weights_array);
-  free(tree_thresh_array);
-  free(alpha1_array);
-  free(alpha2_array);
-  free(stages_thresh_array);
+  free(cascade->stages_array);
+  free(cascade->rectangles_array);
+  free(cascade->scaled_rectangles_array);
+  free(cascade->weights_array);
+  free(cascade->tree_thresh_array);
+  free(cascade->alpha1_array);
+  free(cascade->alpha2_array);
+  free(cascade->stages_thresh_array);
 }
 /* End of file. */

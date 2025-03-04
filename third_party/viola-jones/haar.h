@@ -106,7 +106,7 @@ extern "C" {
     void readTextClassifier(myCascade* cascade);
 
     /* Releases classifier resources */
-    void releaseTextClassifier();
+    void releaseTextClassifier(myCascade* cascade);
 
     /* Draws white bounding boxes around detected faces */
     void drawRectangle(MyImage* image, MyRect r);

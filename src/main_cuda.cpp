@@ -1,3 +1,4 @@
+// main_cuda.cpp
 #include "image.h"
 #include "haar.h"
 #include "cuda_detect.h"  // runDetection is declared here.
@@ -8,6 +9,32 @@
 
 #define INPUT_FILENAME "Face.pgm"
 #define OUTPUT_FILENAME "Output.pgm"
+
+// Helper function to scan classifier data and compute the extra offsets (in x and y)
+// that account for all rectangle extents beyond the base detection window.
+void computeExtraOffsets(const myCascade* cascade, int* extra_x, int* extra_y) {
+    *extra_x = 0;
+    *extra_y = 0;
+    // Each feature consists of 3 rectangles, and each rectangle is represented by 4 integers:
+    // [x_offset, y_offset, width, height]
+    // Thus, the total number of rectangle entries is total_nodes * 12.
+    int totalRectElems = cascade->total_nodes * 12;
+    for (int i = 0; i < totalRectElems; i += 4) {
+        int rx = cascade->rectangles_array[i];
+        int ry = cascade->rectangles_array[i + 1];
+        int rw = cascade->rectangles_array[i + 2];
+        int rh = cascade->rectangles_array[i + 3];
+        // Skip "unused" rectangles (all zero)
+        if (rx == 0 && ry == 0 && rw == 0 && rh == 0)
+            continue;
+        int current_right = rx + rw;
+        int current_bottom = ry + rh;
+        if (current_right > *extra_x)
+            *extra_x = current_right;
+        if (current_bottom > *extra_y)
+            *extra_y = current_bottom;
+    }
+}
 
 int main() {
     printf("-- entering main function --\n");
@@ -61,24 +88,32 @@ int main() {
 
     if (cascade->scaled_rectangles_array == NULL) {
         printf("ERROR: cascade->scaled_rectangles_array is NULL after readTextClassifier!\n");
-    } else {
+    }
+    else {
         printf("cascade->scaled_rectangles_array is NOT NULL after readTextClassifier: %p\n", cascade->scaled_rectangles_array);
     }
 
     // 4. Link integral images to the cascade.
     printf("-- linking integral images to cascade --\n");
-    printf("-- Before setImageForCascadeClassifier call --\n");
     setImageForCascadeClassifier(cascade, sum, sqsum);
-    printf("-- After setImageForCascadeClassifier call --\n");
     printf("-- integral images linked to cascade --\n");
+
+    // Compute extra offsets based on the classifier's rectangle data.
+    int extra_x = 0, extra_y = 0;
+    computeExtraOffsets(cascade, &extra_x, &extra_y);
+    printf("Computed extra offsets: extra_x = %d, extra_y = %d\n", extra_x, extra_y);
+
+    // Adjust the detection window size by adding the extra offsets.
+    int adjusted_width = cascade->orig_window_size.width + extra_x;
+    int adjusted_height = cascade->orig_window_size.height + extra_y;
+    printf("Adjusted detection window size: (%d, %d)\n", adjusted_width, adjusted_height);
 
     // 5. Run CUDA detection.
     float scaleFactor = 1.2f;
     int maxCandidates = 1000000000;  // Adjust as needed.
     printf("-- detecting faces using CUDA --\n");
-    printf("-- Before runDetection call --\n");
-    std::vector<MyRect> result = runDetection(sum, sqsum, cascade, maxCandidates, scaleFactor);
-    printf("-- After runDetection call --\n");
+    // Note: runDetection now must accept the adjusted window sizes.
+    std::vector<MyRect> result = runDetection(sum, sqsum, cascade, maxCandidates, scaleFactor, adjusted_width, adjusted_height);
     printf("-- face detection using CUDA complete --\n");
     printf("Number of detected faces: %zu\n", result.size());
 
@@ -96,9 +131,8 @@ int main() {
         printf("-- image saved as %s --\n", OUTPUT_FILENAME);
 
     // 8. Clean up.
-    releaseTextClassifier();
+    releaseTextClassifier(cascade);
     freeImage(image);
-    // Free the integral image memory.
     freeSumImage(sum);
     freeSumImage(sqsum);
 
