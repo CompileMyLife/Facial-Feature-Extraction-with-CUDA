@@ -6,7 +6,7 @@ CFLAGS  := -std=c++14 -Wall -g
 NCC     := nvcc
 NLIB    := /usr/local/cuda/lib64
 #NFLAGS  := -std=c++14 -arch=sm_75 -g -G # T4 GPU available on Google Colab
-NFLAGS  := -std=c++14 -gencode arch=compute_89,code=sm_89 -gencode arch=compute_75,code=sm_75 -lineinfo -g -G -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
+NFLAGS  := -std=c++14 -gencode arch=compute_89,code=sm_89 -gencode arch=compute_75,code=sm_75 -g -G -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
 
 # Directories
 SRC_DIR := ./src
