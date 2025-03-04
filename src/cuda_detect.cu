@@ -17,8 +17,9 @@
 //#define DEBUG_CUDA_PRINTS2
 #define DEBUG_CUDA_PRINTS3
 #define DEBUG_CUDA_PRINTS5
-#define DEBUG_INDEX
+// #define DEBUG_INDEX
 #define IDX_PRINT
+#define DEBUG_CUDA_PRINTS6
 
 #ifdef DEBUG_CUDA_PRINTS
 #define DEV_PRINT(...) do { \
@@ -58,7 +59,7 @@ extern __device__ int atomicCAS(int* address, int compare, int val);
 // [x_offset1, y_offset1, width1, height1, x_offset2, y_offset2, width2, height2,
 //  x_offset3, y_offset3, width3, height3]
 __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int variance_norm_factor, MyPoint p,
-    int haar_counter, int w_index, int r_index)
+    int haar_counter, int w_index, int r_index, float scaleFactor)
 {
 
     //printf("[Device] entered evalWeakClassifier_device\n");
@@ -73,10 +74,17 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int* rect = d_rectangles_array + r_index;
 
     // --- First Rectangle ---
-    int tl1_x = p.x + rect[0];
-    int tl1_y = p.y + rect[1];
-    int br1_x = tl1_x + rect[2];
-    int br1_y = tl1_y + rect[3];
+    int tl1_x = p.x + (int)roundf(rect[0] * scaleFactor);
+    int tl1_y = p.y + (int)roundf(rect[1] * scaleFactor);
+    int br1_x = tl1_x + (int)roundf(rect[2] * scaleFactor);
+    int br1_y = tl1_y + (int)roundf(rect[3] * scaleFactor);
+
+#ifdef DEBUG_CUDA_PRINTS6
+    // Print candidate coordinate, scale factor, and computed rectangle for debugging.
+    printf("[DEBUG] scaleFactor = %f, candidate=(%d,%d)\n", scaleFactor, p.x, p.y);
+    printf("[DEBUG] Rect1 computed: tl=(%d,%d), br=(%d,%d) | Integral dims: width=%d, height=%d\n",
+        tl1_x, tl1_y, br1_x, br1_y, d_cascade->sum.width, d_cascade->sum.height);
+#endif
 
 #ifdef DEBUG_INDEX
     if (p.x == 2015 && p.y == 863) { 
@@ -126,10 +134,15 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     sum1 = sum1 * d_weights_array[w_index + 0];
 
     // --- Second Rectangle ---
-    int tl2_x = p.x + rect[4];
-    int tl2_y = p.y + rect[5];
-    int br2_x = tl2_x + rect[6];
-    int br2_y = tl2_y + rect[7];
+    int tl2_x = p.x + (int)roundf(rect[4] * scaleFactor);
+    int tl2_y = p.y + (int)roundf(rect[5] * scaleFactor);
+    int br2_x = tl2_x + (int)roundf(rect[6] * scaleFactor);
+    int br2_y = tl2_y + (int)roundf(rect[7] * scaleFactor);
+
+#ifdef DEBUG_CUDA_PRINTS6
+    printf("[DEBUG] Rect2 computed: tl=(%d,%d), br=(%d,%d)\n",
+        tl2_x, tl2_y, br2_x, br2_y);
+#endif
 
 #ifdef DEBUG_CUDA_PRINTS
     if ((p.x % 100 == 0) && (p.y % 100 == 0)) {
@@ -164,10 +177,16 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     // --- Third Rectangle (if present) ---
     if (d_weights_array[w_index + 2] != 0)
     {
-        int tl3_x = p.x + rect[8];
-        int tl3_y = p.y + rect[9];
-        int br3_x = tl3_x + rect[10];
-        int br3_y = tl3_y + rect[11];
+        int tl3_x = p.x + (int)roundf(rect[8] * scaleFactor);
+        int tl3_y = p.y + (int)roundf(rect[9] * scaleFactor);
+        int br3_x = tl3_x + (int)roundf(rect[10] * scaleFactor);
+        int br3_y = tl3_y + (int)roundf(rect[11] * scaleFactor);
+
+#ifdef DEBUG_CUDA_PRINTS6
+        printf("[DEBUG] Rect3 computed: tl=(%d,%d), br=(%d,%d)\n",
+            tl3_x, tl3_y, br3_x, br3_y);
+#endif
+
 #ifdef DEBUG_CUDA_PRINTS
         if ((p.x % 100 == 0) && (p.y % 100 == 0)) {
             printf("[Device DEBUG] Rect3 raw: offset=(%d,%d), size=(%d,%d)\n",
@@ -256,6 +275,11 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 
 
     int t =d_tree_thresh_array[haar_counter] * (variance_norm_factor);
+
+#ifdef DEBUG_CUDA_PRINTS6
+    printf("[DEBUG] Weak classifier: total_sum=%d, threshold=%d\n", total_sum, t);
+#endif
+
 #ifdef DEBUG_CUDA_PRINTS
     if ((p.x % 100 == 0) && (p.y % 100 == 0))
         printf("[Device] Weak classifier: total_sum=%d, threshold=%d, candidate=(%d,%d) returns %d\n",
@@ -269,11 +293,17 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 
 // ---------------------------------------------------------------------
 // Device function: Run the cascade classifier on a candidate window.
-__device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsum, const myCascade* d_cascade, MyPoint p, int start_stage)
+__device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsum, 
+    const myCascade* d_cascade, MyPoint p, int start_stage, float scaleFactor)
 {
     // Ensure candidate window is within bounds.
     assert(p.x >= 0 && p.x < d_cascade->sum.width);
     assert(p.y >= 0 && p.y < d_cascade->sum.height);
+
+#ifdef DEBUG_CUDA_PRINTS6
+    printf("[DEBUG] runCascadeClassifier_device: candidate=(%d,%d), scaleFactor=%f, sum dims=(%d,%d)\n",
+        p.x, p.y, scaleFactor, d_cascade->sum.width, d_cascade->sum.height);
+#endif
 
     int p_offset = p.y * d_cascade->sum.width + p.x;
     assert(p_offset < d_cascade->sum.width * d_cascade->sum.height);
@@ -335,7 +365,8 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
 #endif
 
             // Compute the feature response.
-            int feature_result = evalWeakClassifier_device(d_cascade, var_norm, p, haar_counter, w_index, r_index);
+            int feature_result = evalWeakClassifier_device(d_cascade, var_norm, p, 
+                haar_counter, w_index, r_index, scaleFactor);
 
 #ifdef IDX_PRINT
             printf("[GPU DEBUG] After eval: Candidate=(%d,%d), Stage %d, Feature %d, feature_result=%d\n",
@@ -375,7 +406,7 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
 // ---------------------------------------------------------------------
 // CUDA kernel: Each thread processes one candidate window.
 __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
-    myCascade* d_cascade, float factor,
+    myCascade* d_cascade, float scaleFactor,
     int x_max, int y_max,
     MyRect* d_candidates, int* d_candidateCount,
     int maxCandidates)
@@ -397,7 +428,7 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
         printf("[Device DEBUG] Processing candidate window at (%d,%d)\n", x, y);
 #endif
 
-    int result = runCascadeClassifier_device(d_sum, d_sqsum, d_cascade, p, 0);
+    int result = runCascadeClassifier_device(d_sum, d_sqsum, d_cascade, p, 0, scaleFactor);
 
 #ifdef DEBUG_CUDA_PRINTS2
     if (x % 100 == 0 && y % 100 == 0)
@@ -406,10 +437,10 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
 
     if (result > 0) {
         MyRect r;
-        r.x = (int)roundf(x * factor);
-        r.y = (int)roundf(y * factor);
-        r.width = (int)roundf(d_cascade->orig_window_size.width * factor);
-        r.height = (int)roundf(d_cascade->orig_window_size.height * factor);
+        r.x = (int)roundf(x * scaleFactor);
+        r.y = (int)roundf(y * scaleFactor);
+        r.width = (int)roundf(d_cascade->orig_window_size.width * scaleFactor);
+        r.height = (int)roundf(d_cascade->orig_window_size.height * scaleFactor);
         int idx = atomicAdd(d_candidateCount, 1);
         if (idx < maxCandidates) {
             d_candidates[idx] = r;
@@ -577,18 +608,33 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     printf("  orig_window_size = (%d, %d)\n", h_cascadeStruct.orig_window_size.width, h_cascadeStruct.orig_window_size.height);
     printf("  inv_window_area = %f\n", h_cascadeStruct.inv_window_area);
 
-    // Prepare kernel argument array; note that for unified memory pointers, we pass them directly.
-    void* kernelArgs[] = {
-        (void*)d_sum,
-        (void*)d_sqsum,
-        (void*)d_cascade,
-        (void*)&scaleFactor,
-        (void*)&x_max,
-        (void*)&y_max,
-        (void*)d_candidates,      // Pass the unified memory pointer directly.
-        (void*)d_candidateCount,   // Pass the unified memory pointer directly.
-		(void*)&maxCandidates
+    // Create a stuct that contains all kernel arguments
+    struct KernelArgs {
+        MyIntImage* d_sum;
+        MyIntImage* d_sqsum;
+        myCascade* d_cascade;
+        float scaleFactor;
+        int x_max;
+        int y_max;
+        MyRect* d_candidates;
+        int* d_candidateCount;
+        int maxCandidates;
     };
+
+    // Fill an instance of kernel args struct
+    KernelArgs args;
+    args.d_sum = d_sum;
+    args.d_sqsum = d_sqsum;
+    args.d_cascade = d_cascade;
+    args.scaleFactor = scaleFactor;
+    args.x_max = x_max;
+    args.y_max = y_max;
+    args.d_candidates = d_candidates;
+    args.d_candidateCount = d_candidateCount;
+    args.maxCandidates = maxCandidates;
+
+    void* kernelArgs[] = { &args };
+
 
     // --- Debug prints to verify device pointers and kernel arguments ---
     printf("[DEBUG] Verifying device pointers and kernel arguments:\n");
@@ -637,7 +683,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
         printf("[Host] Kernel execution error: %s\n", cudaGetErrorString(syncErr));
     }
 
-    cudaError_t launchErr = cudaLaunchKernel((const void*)detectKernel, gridDim, blockDim, kernelArgs, 0, 0);
+    detectKernel << <gridDim, blockDim >> > (d_sum, d_sqsum, d_cascade, scaleFactor, x_max, y_max, d_candidates, d_candidateCount, maxCandidates);
+    cudaError_t launchErr = cudaGetLastError();
     if (launchErr != cudaSuccess) {
         printf("[Host] cudaLaunchKernel error: %s\n", cudaGetErrorString(launchErr));
     }
