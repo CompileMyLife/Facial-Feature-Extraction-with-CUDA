@@ -15,3 +15,5 @@
 2029	2161	7627759679891641	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10
 9	2306	7627770835456613	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
 2307	2439	7627770858443039	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10
+9	2049	7627774024397197	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
+2049	2183	7627774044801513	FacialFeatureExtractionWithCUDA.exe	1ff7dd7ff94bba10

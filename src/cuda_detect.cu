@@ -347,6 +347,15 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
         stage_sum = 0.0f;
         int num_features = d_stages_array[i];
 
+        // Check that processing this stage won't overrun our classifier arrays.
+        if (haar_counter + num_features > d_cascade->total_nodes) {
+#ifdef DEBUG_CUDA_PRINTS6
+            printf("[ERROR] Not enough features left: haar_counter=%d, num_features=%d, total_nodes=%d. Accept candidate.\n",
+                haar_counter, num_features, d_cascade->total_nodes);
+#endif
+            return 1;
+        }
+
 #ifdef IDX_PRINT
         printf("[GPU DEBUG: IDX] Stage %d: Candidate=(%d,%d), num_features=%d\n", i, p.x, p.y, num_features);
 #endif
@@ -356,12 +365,12 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
             printf("[Device DEBUG] Stage %d: num_features=%d\n", i, num_features);
 #endif
         for (int j = 0; j < num_features; j++) {
-            // Make sure we don't exceed the total number of nodes.
 
+            // Additional guard: if haar_counter is at or past the limit, return success.
             if (haar_counter >= d_cascade->total_nodes) {
 #ifdef DEBUG_CUDA_PRINTS6
-                printf("[ERROR] haar_counter (%d) reached total_nodes (%d). Candidate accepted.\n",
-                    haar_counter, d_cascade->total_nodes);
+                printf("[ERROR] haar_counter (%d) reached total_nodes (%d) during stage %d. Candidate accepted.\n",
+                    haar_counter, d_cascade->total_nodes, i);
 #endif
                 return 1;
             }
