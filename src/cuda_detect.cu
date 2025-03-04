@@ -16,6 +16,9 @@
 //#define DEBUG_CUDA_PRINTS
 //#define DEBUG_CUDA_PRINTS2
 #define DEBUG_CUDA_PRINTS3
+#define DEBUG_CUDA_PRINTS5
+#define DEBUG_INDEX
+#define IDX_PRINT
 
 #ifdef DEBUG_CUDA_PRINTS
 #define DEV_PRINT(...) do { \
@@ -50,18 +53,6 @@ __constant__ int* d_tree_thresh_array;
 extern __device__ int atomicCAS(int* address, int compare, int val);
 
 // ---------------------------------------------------------------------
-// Custom atomic add.
-__device__ int myAtomicAdd(int* address, int val) {
-    int old = *address;
-    int assumed;
-    do {
-        assumed = old;
-        old = atomicCAS(address, assumed, assumed + val);
-    } while (assumed != old);
-    return old;
-}
-
-// ---------------------------------------------------------------------
 // Device function: Evaluate a weak classifier for candidate window p.
 // Assumes that for each feature, d_rectangles_array stores 12 ints in the order:
 // [x_offset1, y_offset1, width1, height1, x_offset2, y_offset2, width2, height2,
@@ -87,12 +78,12 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int br1_x = tl1_x + rect[2];
     int br1_y = tl1_y + rect[3];
 
-    // If candidate is near the right or bottom edge, print unconditionally:
-    if (p.x > d_cascade->sum.width - 200 || p.y > d_cascade->sum.height - 200) {
-       
-        /*printf("[Device DEBUG] Candidate=(%d,%d): Rect1 computed: tl=(%d,%d), br=(%d,%d)\n",
-            p.x, p.y, tl1_x, tl1_y, br1_x, br1_y);*/
+#ifdef DEBUG_INDEX
+    if (p.x == 2015 && p.y == 863) { 
+        printf("[GPU DEBUG] Candidate=(%d,%d) Rect1: tl=(%d,%d), br=(%d,%d)\n",
+            p.x, p.y, tl1_x, tl1_y, br1_x, br1_y);
     }
+#endif
 
 #ifdef DEBUG_CUDA_PRINTS
     if ((p.x % 100 == 0) && (p.y % 100 == 0)) {
@@ -115,6 +106,15 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int idx_tr1 = tl1_y * d_cascade->sum.width + br1_x;
     int idx_bl1 = br1_y * d_cascade->sum.width + tl1_x;
     int idx_br1 = br1_y * d_cascade->sum.width + br1_x;
+
+#ifdef DEBUG_INDEX
+    if (p.x == 2015 && p.y == 863) {
+        printf("[GPU DEBUG] Rect1 indices: tl=%d, tr=%d, bl=%d, br=%d\n",
+            idx_tl1, idx_tr1, idx_bl1, idx_br1);
+        printf("[GPU DEBUG] Integral image dims: width=%d, height=%d\n",
+            d_cascade->sum.width, d_cascade->sum.height);
+    }
+#endif
 
 #ifdef DEBUG_CUDA_PRINTS
     if ((p.x % 100 == 0) && (p.y % 100 == 0))
@@ -157,7 +157,7 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 #endif
 
     int sum2 = d_cascade->p0[idx_br2] - d_cascade->p0[idx_tr2] - d_cascade->p0[idx_bl2] + d_cascade->p0[idx_tl2];
-    sum2 = sum2 + d_weights_array[w_index + 1];
+    sum2 = sum2 * d_weights_array[w_index + 1];
 
     int total_sum = sum1 + sum2;
 
@@ -194,6 +194,67 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
         total_sum += sum3 * d_weights_array[w_index + 2];
     }
 
+#ifdef DEBUG_CUDA_PRINTS5
+    if (p.x == 2015 && p.y == 863 && haar_counter == 0) {
+        int sum3 = 0;
+        if (d_weights_array[w_index + 2] != 0) {
+            int tl3_x = p.x + rect[8];
+            int tl3_y = p.y + rect[9];
+            int br3_x = tl3_x + rect[10];
+            int br3_y = tl3_y + rect[11];
+            int idx_tl3 = tl3_y * d_cascade->sum.width + tl3_x;
+            int idx_tr3 = tl3_y * d_cascade->sum.width + br3_x;
+            int idx_bl3 = br3_y * d_cascade->sum.width + tl3_x;
+            int idx_br3 = br3_y * d_cascade->sum.width + br3_x;
+            sum3 = d_cascade->p0[idx_br3] - d_cascade->p0[idx_tr3] - d_cascade->p0[idx_bl3] + d_cascade->p0[idx_tl3];
+            sum3 = sum3 * d_weights_array[w_index + 2];
+        }
+        printf("[GPU DEBUG] Candidate (%d,%d), Stage 0, Feature 0: sum1 = %d, sum2 = %d, sum3 = %d, final_sum = %d\n",
+            p.x, p.y, sum1, sum2, sum3, sum1 + sum2 + sum3);
+    }
+#endif
+
+#ifdef DEBUG_CUDA_PRINTS5
+    if (p.x == 4037 && p.y == 2397 && haar_counter == 0) {
+        int sum3 = 0;
+        if (d_weights_array[w_index + 2] != 0) {
+            int tl3_x = p.x + rect[8];
+            int tl3_y = p.y + rect[9];
+            int br3_x = tl3_x + rect[10];
+            int br3_y = tl3_y + rect[11];
+            int idx_tl3 = tl3_y * d_cascade->sum.width + tl3_x;
+            int idx_tr3 = tl3_y * d_cascade->sum.width + br3_x;
+            int idx_bl3 = br3_y * d_cascade->sum.width + tl3_x;
+            int idx_br3 = br3_y * d_cascade->sum.width + br3_x;
+            sum3 = d_cascade->p0[idx_br3] - d_cascade->p0[idx_tr3] - d_cascade->p0[idx_bl3] + d_cascade->p0[idx_tl3];
+            sum3 = sum3 * d_weights_array[w_index + 2];
+        }
+        printf("[GPU DEBUG] Candidate (%d,%d), Stage 0, Feature 0: sum1 = %d, sum2 = %d, sum3 = %d, final_sum = %d\n",
+            p.x, p.y, sum1, sum2, sum3, sum1 + sum2 + sum3);
+    }
+#endif
+
+#ifdef DEBUG_CUDA_PRINTS5
+    if (p.x == 1154 && p.y == 883 && haar_counter == 0) {
+        int sum3 = 0;
+        if (d_weights_array[w_index + 2] != 0) {
+            int tl3_x = p.x + rect[8];
+            int tl3_y = p.y + rect[9];
+            int br3_x = tl3_x + rect[10];
+            int br3_y = tl3_y + rect[11];
+            int idx_tl3 = tl3_y * d_cascade->sum.width + tl3_x;
+            int idx_tr3 = tl3_y * d_cascade->sum.width + br3_x;
+            int idx_bl3 = br3_y * d_cascade->sum.width + tl3_x;
+            int idx_br3 = br3_y * d_cascade->sum.width + br3_x;
+            sum3 = d_cascade->p0[idx_br3] - d_cascade->p0[idx_tr3] - d_cascade->p0[idx_bl3] + d_cascade->p0[idx_tl3];
+            sum3 = sum3 * d_weights_array[w_index + 2];
+        }
+        printf("[GPU DEBUG] Candidate (%d,%d), Stage 0, Feature 0: sum1 = %d, sum2 = %d, sum3 = %d, final_sum = %d\n",
+            p.x, p.y, sum1, sum2, sum3, sum1 + sum2 + sum3);
+    }
+#endif
+
+
     int t =d_tree_thresh_array[haar_counter] * (variance_norm_factor);
 #ifdef DEBUG_CUDA_PRINTS
     if ((p.x % 100 == 0) && (p.y % 100 == 0))
@@ -208,7 +269,7 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 
 // ---------------------------------------------------------------------
 // Device function: Run the cascade classifier on a candidate window.
-__device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum, const myCascade* d_cascade, MyPoint p, int start_stage)
+__device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsum, const myCascade* d_cascade, MyPoint p, int start_stage)
 {
     // Ensure candidate window is within bounds.
     assert(p.x >= 0 && p.x < d_cascade->sum.width);
@@ -219,22 +280,33 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
 
     int pq_offset = p.y * d_cascade->sqsum.width + p.x;
     assert(pq_offset < d_cascade->sqsum.width * d_cascade->sqsum.height);
-
-#ifdef DEBUG_CUDA_PRINTS
-    if ((p.x % 100 == 0) && (p.y % 100 == 0))
-        printf("[Device DEBUG] Candidate=(%d,%d): p_offset=%d, pq_offset=%d, sum.width=%d, sum.height=%d, sqsum.width=%d, sqsum.height=%d\n",
-            p.x, p.y, p_offset, pq_offset, d_cascade->sum.width, d_cascade->sum.height, d_cascade->sqsum.width, d_cascade->sqsum.height);
+    
+#ifdef IDX_PRINT
+    printf("[GPU DEBUG: IDX] Candidate=(%d,%d): p_offset=%d, pq_offset=%d, sum dims=(%d,%d), sqsum dims=(%d,%d)\n",
+        p.x, p.y, p_offset, pq_offset,
+        d_cascade->sum.width, d_cascade->sum.height,
+        d_cascade->sqsum.width, d_cascade->sqsum.height);
 #endif
 
+    // Compute the mean and variance from the integral images.
     unsigned int var_norm = (d_cascade->pq0[pq_offset] - d_cascade->pq1[pq_offset]
         - d_cascade->pq2[pq_offset] + d_cascade->pq3[pq_offset]);
     unsigned int mean = (d_cascade->p0[p_offset] - d_cascade->p1[p_offset]
         - d_cascade->p2[p_offset] + d_cascade->p3[p_offset]);
+
+#ifdef IDX_PRINT
+    printf("[GPU DEBUG: IDX] Candidate=(%d,%d): mean=%u, initial var_norm=%u\n", p.x, p.y, mean, var_norm);
+#endif
+
     var_norm = (var_norm * d_cascade->inv_window_area) - mean * mean;
     if (var_norm > 0)
         var_norm = (unsigned int)sqrtf((float)var_norm);
     else
         var_norm = 1;
+
+#ifdef IDX_PRINT
+    printf("[GPU DEBUG: IDX] Candidate=(%d,%d): final var_norm=%u\n", p.x, p.y, var_norm);
+#endif
 
     int haar_counter = 0;
     int w_index = 0;
@@ -244,6 +316,11 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
     for (int i = start_stage; i < d_cascade->n_stages; i++) {
         stage_sum = 0.0f;
         int num_features = d_stages_array[i];
+
+#ifdef IDX_PRINT
+        printf("[GPU DEBUG: IDX] Stage %d: Candidate=(%d,%d), num_features=%d\n", i, p.x, p.y, num_features);
+#endif
+
 #ifdef DEBUG_CUDA_PRINTS
         if ((p.x % 100 == 0) && (p.y % 100 == 0))
             printf("[Device DEBUG] Stage %d: num_features=%d\n", i, num_features);
@@ -251,8 +328,20 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
         for (int j = 0; j < num_features; j++) {
             // Make sure we don't exceed the total number of nodes.
             assert(haar_counter < d_cascade->total_nodes);
+
+#ifdef IDX_PRINT
+            printf("[GPU DEBUG: IDX] Before eval: Candidate=(%d,%d), haar_counter=%d, w_index=%d, r_index=%d\n",
+                p.x, p.y, haar_counter, w_index, r_index);
+#endif
+
             // Compute the feature response.
             int feature_result = evalWeakClassifier_device(d_cascade, var_norm, p, haar_counter, w_index, r_index);
+
+#ifdef IDX_PRINT
+            printf("[GPU DEBUG] After eval: Candidate=(%d,%d), Stage %d, Feature %d, feature_result=%d\n",
+                p.x, p.y, i, j, feature_result);
+#endif
+
 #ifdef DEBUG_CUDA_PRINTS2
             if ((p.x >= 2619 && p.x < 2619 + 316) &&
                 (p.y >= 693 && p.y < 693 + 307)) {
@@ -260,7 +349,7 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
             }
 #endif
 
-#ifdef DEBUG_CUDA_PRINTS3
+#ifdef DEBUG_CUDA_PRINTS4
             if (p.x == 2015 && p.y == 863) {  // Same location as CPU
                 printf("[GPU DEBUG] Candidate (%d,%d), Stage 0, Feature 0: response = %d\n", p.x, p.y, feature_result);
             }
@@ -285,8 +374,8 @@ __device__ int runCascadeClassifier_device(MyIntImage d_sum, MyIntImage d_sqsum,
 
 // ---------------------------------------------------------------------
 // CUDA kernel: Each thread processes one candidate window.
-__global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
-    myCascade d_cascade, float factor,
+__global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
+    myCascade* d_cascade, float factor,
     int x_max, int y_max,
     MyRect* d_candidates, int* d_candidateCount,
     int maxCandidates)
@@ -308,7 +397,8 @@ __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
         printf("[Device DEBUG] Processing candidate window at (%d,%d)\n", x, y);
 #endif
 
-    int result = runCascadeClassifier_device(d_sum, d_sqsum, &d_cascade, p, 0);
+    int result = runCascadeClassifier_device(d_sum, d_sqsum, d_cascade, p, 0);
+
 #ifdef DEBUG_CUDA_PRINTS2
     if (x % 100 == 0 && y % 100 == 0)
         printf("[Device DEBUG] runCascadeClassifier_device returned: %d for window (%d,%d)\n", result, x, y);
@@ -318,12 +408,13 @@ __global__ void detectKernel(MyIntImage d_sum, MyIntImage d_sqsum,
         MyRect r;
         r.x = (int)roundf(x * factor);
         r.y = (int)roundf(y * factor);
-        r.width = (int)roundf(d_cascade.orig_window_size.width * factor);
-        r.height = (int)roundf(d_cascade.orig_window_size.height * factor);
-        int idx = myAtomicAdd(d_candidateCount, 1);
+        r.width = (int)roundf(d_cascade->orig_window_size.width * factor);
+        r.height = (int)roundf(d_cascade->orig_window_size.height * factor);
+        int idx = atomicAdd(d_candidateCount, 1);
         if (idx < maxCandidates) {
             d_candidates[idx] = r;
         }
+       
 #ifdef DEBUG_CUDA_PRINTS
         if (x % 100 == 0 && y % 100 == 0)
             printf("[Device DEBUG] Candidate added at index %d for window (%d,%d)\n", idx, x, y);
@@ -370,9 +461,15 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     d_cascade->sum = *d_sum;
     d_cascade->sqsum = *d_sqsum;
 
-    // Now, correct the data pointers within d_cascade->sum and d_cascade->sqsum
+    // Correct the data pointers within d_cascade->sum and d_cascade->sqsum
     d_cascade->sum.data = d_sum->data;   // Point to the Unified Memory data buffer of d_sum
     d_cascade->sqsum.data = d_sqsum->data; // Point to the Unified Memory data buffer of d_sqsum
+
+	// Update dimensions of the integral images in the cascade structure
+    d_cascade->sum.width = d_sum->width;
+    d_cascade->sum.height = d_sum->height;
+    d_cascade->sqsum.width = d_sqsum->width;
+    d_cascade->sqsum.height = d_sqsum->height;
 
     // Update cascade corner pointers to reflect the new unified memory pointers
     int winW = d_cascade->orig_window_size.width;
@@ -386,6 +483,16 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     d_cascade->pq1 = d_cascade->sqsum.data + winW - 1;
     d_cascade->pq2 = d_cascade->sqsum.data + d_cascade->sqsum.width * (winH - 1);
     d_cascade->pq3 = d_cascade->sqsum.data + d_cascade->sqsum.width * (winH - 1) + (winW - 1);
+
+    printf("Cascade corner pointers:\n");
+    printf(" p0 = %p\n", (void*)d_cascade->p0);
+    printf(" p1 = %p (offset: %td)\n", (void*)d_cascade->p1, d_cascade->p1 - d_cascade->sum.data);
+    printf(" p2 = %p (offset: %td)\n", (void*)d_cascade->p2, d_cascade->p2 - d_cascade->sum.data);
+    printf(" p3 = %p (offset: %td)\n", (void*)d_cascade->p3, d_cascade->p3 - d_cascade->sum.data);
+    printf(" pq0 = %p\n", (void*)d_cascade->pq0);
+    printf(" pq1 = %p (offset: %td)\n", (void*)d_cascade->pq1, d_cascade->pq1 - d_cascade->sqsum.data);
+    printf(" pq2 = %p (offset: %td)\n", (void*)d_cascade->pq2, d_cascade->pq2 - d_cascade->sqsum.data);
+    printf(" pq3 = %p (offset: %td)\n", (void*)d_cascade->pq3, d_cascade->pq3 - d_cascade->sqsum.data);
 
 
     // --- Step 4: Transfer classifier parameters to device memory ---
@@ -409,14 +516,14 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     CUDA_CHECK(cudaMemcpy(d_weights_array_dev, cascade->weights_array, cascade->total_nodes * 3 * sizeof(int), cudaMemcpyHostToDevice));
     printf("[DEBUG] d_weights_array_dev allocated at %p\n", (void*)d_weights_array_dev);
 
-    int* d_alpha1_array_dev = nullptr;
-    CUDA_CHECK(cudaMalloc((void**)&d_alpha1_array_dev, cascade->total_nodes * sizeof(int)));
-    CUDA_CHECK(cudaMemcpy(d_alpha1_array_dev, cascade->alpha1_array, cascade->total_nodes * sizeof(int), cudaMemcpyHostToDevice));
+    float* d_alpha1_array_dev = nullptr;
+    CUDA_CHECK(cudaMalloc((void**)&d_alpha1_array_dev, cascade->total_nodes * sizeof(float)));
+    CUDA_CHECK(cudaMemcpy(d_alpha1_array_dev, cascade->alpha1_array, cascade->total_nodes * sizeof(float), cudaMemcpyHostToDevice));
     printf("[DEBUG] d_alpha1_array_dev allocated at %p\n", (void*)d_alpha1_array_dev);
 
-    int* d_alpha2_array_dev = nullptr;
-    CUDA_CHECK(cudaMalloc((void**)&d_alpha2_array_dev, cascade->total_nodes * sizeof(int)));
-    CUDA_CHECK(cudaMemcpy(d_alpha2_array_dev, cascade->alpha2_array, cascade->total_nodes * sizeof(int), cudaMemcpyHostToDevice));
+    float* d_alpha2_array_dev = nullptr;
+    CUDA_CHECK(cudaMalloc((void**)&d_alpha2_array_dev, cascade->total_nodes * sizeof(float)));
+    CUDA_CHECK(cudaMemcpy(d_alpha2_array_dev, cascade->alpha2_array, cascade->total_nodes * sizeof(float), cudaMemcpyHostToDevice));
     printf("[DEBUG] d_alpha2_array_dev allocated at %p\n", (void*)d_alpha2_array_dev);
 
     int* d_tree_thresh_array_dev = nullptr;
@@ -428,8 +535,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
     CUDA_CHECK(cudaMemcpyToSymbol(d_stages_thresh_array, &d_stages_thresh_array_dev, sizeof(float*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_rectangles_array, &d_rectangles_array_dev, sizeof(int*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_weights_array, &d_weights_array_dev, sizeof(int*)));
-    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha1_array, &d_alpha1_array_dev, sizeof(int*)));
-    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha2_array, &d_alpha2_array_dev, sizeof(int*)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha1_array, &d_alpha1_array_dev, sizeof(float*)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha2_array, &d_alpha2_array_dev, sizeof(float*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_tree_thresh_array, &d_tree_thresh_array_dev, sizeof(int*)));
     printf("[Host DEBUG] Transferred classifier parameters to device constant memory.\n");
 
@@ -446,8 +553,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
 
     // --- Step 7: Determine search space dimensions and launch the detection kernel ---
     // Define margin values
-    const int margin_x = 30;  // maximum extra x offset from a rectangle feature
-    const int margin_y = 30;  // maximum extra y offset from a rectangle feature
+    const int margin_x = 0;  // maximum extra x offset from a rectangle feature
+    const int margin_y = 0;  // maximum extra y offset from a rectangle feature
 
     // Compute search space with additional margins:
     int x_max = d_sum->width - cascade->orig_window_size.width - margin_x;
@@ -472,14 +579,14 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCasca
 
     // Prepare kernel argument array; note that for unified memory pointers, we pass them directly.
     void* kernelArgs[] = {
-        (void*)&h_sumStruct,
-        (void*)&h_sqsumStruct,
-        (void*)&h_cascadeStruct,
+        (void*)d_sum,
+        (void*)d_sqsum,
+        (void*)d_cascade,
         (void*)&scaleFactor,
         (void*)&x_max,
         (void*)&y_max,
-        (void*)&d_candidates,      // Pass the unified memory pointer directly.
-        (void*)&d_candidateCount,   // Pass the unified memory pointer directly.
+        (void*)d_candidates,      // Pass the unified memory pointer directly.
+        (void*)d_candidateCount,   // Pass the unified memory pointer directly.
 		(void*)&maxCandidates
     };
 
