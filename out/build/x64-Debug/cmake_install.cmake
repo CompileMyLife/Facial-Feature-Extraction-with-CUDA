@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA
+# Install script for directory: C:/Users/rober/source/repos/Facial-Feature-Extraction-with-CUDA
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/out/install/x64-Debug")
+  set(CMAKE_INSTALL_PREFIX "C:/Users/rober/Source/Repos/Facial-Feature-Extraction-with-CUDA/out/install/x64-Debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -47,6 +47,6 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-  file(WRITE "C:/Users/rober/Desktop/588/Facial-Feature-Extraction-with-CUDA/out/build/x64-Debug/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "C:/Users/rober/source/repos/Facial-Feature-Extraction-with-CUDA/out/build/x64-Debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

@@ -74,7 +74,7 @@ int main() {
 
     // 5. Run CUDA detection.
     float scaleFactor = 1.2f;
-    int maxCandidates = 10000;  // Adjust as needed.
+    int maxCandidates = 1000000000;  // Adjust as needed.
     printf("-- detecting faces using CUDA --\n");
     printf("-- Before runDetection call --\n");
     std::vector<MyRect> result = runDetection(sum, sqsum, cascade, maxCandidates, scaleFactor);
