@@ -35,15 +35,15 @@ __constant__ int* d_tree_thresh_array;
 // Declaration of atomicCAS.
 extern __device__ int atomicCAS(int* address, int compare, int val);
 
-
 // ---------------------------------------------------------------------
-// Device function: square root for integers.
+// Device function: Integer square root for the GPU.
+// This function replicates the behavior of the CPU's int_sqrt.
 __device__ int int_sqrt_device(int value) {
     int i;
     unsigned int a = 0, b = 0, c = 0;
     for (i = 0; i < (32 >> 1); i++) {
         c <<= 2;
-        c += (value >> 30); // upper 2 bits of value
+        c += (value >> 30); // get the upper 2 bits of value
         value <<= 2;
         a <<= 1;
         b = (a << 1) | 1;
@@ -187,7 +187,7 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
         for (int j = 0; j < num_features; j++) {
 
             // Compute the feature response.
-            int feature_result = evalWeakClassifier_device(d_cascade, var_norm, p, 
+            int feature_result = evalWeakClassifier_device(d_cascade, (int)var_norm, p, 
                 haar_counter, w_index, r_index, scaleFactor);
                 stage_sum += feature_result;
                 haar_counter++;
@@ -196,7 +196,7 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
         }
 
         /* the number "0.4" is empirically chosen for 5kk73 */
-        if (stage_sum < 0.4*d_stages_thresh_array[i])
+        if (stage_sum < 0.4 * d_stages_thresh_array[i])
             return -i;
     }
     return 1;
