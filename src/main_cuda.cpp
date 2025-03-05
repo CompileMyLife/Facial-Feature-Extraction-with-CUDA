@@ -1,6 +1,6 @@
 // main_cuda.cpp
-#include "image.h"
-#include "haar.h"
+#include "image_cuda.h"
+#include "haar_cuda.h"
 #include "cuda_detect.h"  // runDetection is declared here.
 #include <cuda_runtime.h>
 #include <stdio.h>
@@ -146,6 +146,7 @@ int main() {
 // Here we demonstrate running CUDA detection for each valid scale.
 // We'll loop over the scales again, performing CUDA detection and merging results.
     std::vector<MyRect> allGpuCandidates;
+    int iter_counter = 1;
     factor = 1.0f;
     while (true) {
         int newWidth = (int)(image->width / factor);
@@ -178,7 +179,7 @@ int main() {
         // Check if the detection window fits in the scaled integral image.
         if (factor * (cascade->orig_window_size.width + extra_x) < scaledSum.width &&
             factor * (cascade->orig_window_size.height + extra_y) < scaledSum.height) {
-            std::vector<MyRect> gpuCandidates = runDetection(&scaledSum, &scaledSqSum, cascade, 10000000, factor, adjusted_width, adjusted_height);
+            std::vector<MyRect> gpuCandidates = runDetection(&scaledSum, &scaledSqSum, cascade, 10000000, factor, adjusted_width, adjusted_height, iter_counter);
             // Merge candidates from this scale.
             allGpuCandidates.insert(allGpuCandidates.end(), gpuCandidates.begin(), gpuCandidates.end());
         }

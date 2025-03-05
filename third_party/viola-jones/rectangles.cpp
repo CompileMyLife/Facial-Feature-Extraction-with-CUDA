@@ -1,4 +1,4 @@
-#include "haar.h"
+#include "haar_cuda.h"
 
 int partition(std::vector<MyRect>& _vec, std::vector<int>& labels, float eps);
 

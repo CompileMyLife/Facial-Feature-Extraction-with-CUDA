@@ -1,8 +1,8 @@
 #ifndef CUDA_DETECT_H
 #define CUDA_DETECT_H
 
-#include "haar.h"
-#include "image.h"
+#include "haar_cuda.h"
+#include "image_cuda.h"
 
 #ifdef __cplusplus
 #include <vector>
@@ -23,8 +23,9 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     myCascade* cascade,
     int maxCandidates,
     float scaleFactor,
-    int adjusted_width,
-    int adjusted_height);
+    int extra_x,
+    int extra_y,
+    int iter_counter);
 #endif // __cplusplus
 
 #endif // CUDA_DETECT_H

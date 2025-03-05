@@ -53,6 +53,10 @@ static int *tree_thresh_array;
 static int *stages_thresh_array;
 static int **scaled_rectangles_array;
 
+#define DEBUG_CANDIDATE_X 2015
+#define DEBUG_CANDIDATE_Y 863
+
+
 
 int clock_counter = 0;
 float n_features = 0;
@@ -68,9 +72,6 @@ void ScaleImage_Invoker( myCascade* _cascade, float _factor, int sum_row, int su
 
 /* compute scaled image */
 void nearestNeighbor (MyImage *src, MyImage *dst);
-
-/* debug print function */
-void debugPrintIntegralImageCPU(MyIntImage *img, int numSamples);
 
 /* rounding function */
 inline  int  myRound( float value )
@@ -192,11 +193,6 @@ std::vector<MyRect> detectObjects( MyImage* _img, MySize minSize, MySize maxSize
 
       // For debugging: print a summary of the computed integral image.
 
-      if (iter_counter == 2) {
-      printf("DEBUG: Scale iteration %d, factor = %.3f\n", iter_counter, factor);
-      debugPrintIntegralImageCPU(sum1, 10);
-      }
-
       /* sets images for haar classifier cascade */
       /**************************************************
        * Note:
@@ -211,7 +207,9 @@ std::vector<MyRect> detectObjects( MyImage* _img, MySize minSize, MySize maxSize
       setImageForCascadeClassifier( cascade, sum1, sqsum1);
 
       /* print out for each scale of the image pyramid */
+      printf("\n------------------------------------------\n");
       printf("detecting faces, iter := %d\n", iter_counter);
+      printf("\n------------------------------------------\n");
 
       /****************************************************
        * Process the current scale with the cascaded fitler.
@@ -271,27 +269,26 @@ unsigned int int_sqrt (unsigned int value)
   return a;
 }
 
-void debugPrintIntegralImageCPU(MyIntImage *img, int numSamples) {
+void debugPrintIntegralImageCPU(MyIntImage *img, int candidate_x, int candidate_y, unsigned int mean, unsigned int var_norm) {
   int width = img->width;
   int height = img->height;
-  int total = width * height;
-  printf("Integral image summary: width = %d, height = %d, total values = %d\n", width, height, total);
-  
-  // Print the four corner values
-  printf("Top-left (index 0): %d\n", img->data[0]);
-  printf("Top-right (index %d): %d\n", width - 1, img->data[width - 1]);
-  printf("Bottom-left (index %d): %d\n", (height - 1) * width, img->data[(height - 1) * width]);
-  printf("Bottom-right (index %d): %d\n", total - 1, img->data[total - 1]);
-  
-  // Print an evenly spaced subset of values.
-  int step = total / numSamples;
-  if (step < 1)
-      step = 1;
-  printf("Printing %d sample values (every %d-th value):\n", numSamples, step);
-  for (int i = 0; i < total; i += step) {
-      printf("Index %d: %d\n", i, img->data[i]);
-  }
+
+  int top_left = img->data[0];
+  int top_right = img->data[width - 1];
+  int bottom_left = img->data[(height - 1) * width];
+  int bottom_right = img->data[height * width - 1];
+
+  printf("\n------------------------------------------------\n");
+  printf("[CPU Integral DEBUG] Candidate (%d,%d):\n", candidate_x, candidate_y);
+  printf("Integral Image Corners:\n");
+  printf("  Top-left: %d\n", top_left);
+  printf("  Top-right: %d\n", top_right);
+  printf("  Bottom-left: %d\n", bottom_left);
+  printf("  Bottom-right: %d\n", bottom_right);
+  printf("[CPU DEBUG] mean = %u, var_norm = %u\n", mean, var_norm);
+  printf("------------------------------------------------\n");
 }
+
 
 
 void setImageForCascadeClassifier( myCascade* _cascade, MyIntImage* _sum, MyIntImage* _sqsum)
@@ -421,7 +418,9 @@ inline float evalWeakClassifier(myCascade* cascade, int variance_norm_factor, in
   if (p_offset == 2015 + (863 * cascade->sum.width) && tree_index == 0) {
     int candidate_x = 2015;
     int candidate_y = 863;
-    printf("[CPU DEBUG] Candidate (%d,%d):\n", candidate_x, candidate_y);
+    
+    printf("[CPU DEBUG] Candidate (%d,%d), Feature %d: sum1=%d, sum2=%d, sum3=%d, final_sum=%d\n",
+      candidate_x, candidate_y, tree_index, sum1, sum2, sum3, final_sum);
 
     // For the first rectangle: the classifier data (rectangles_array) holds the offsets and sizes.
     int rx = rectangles_array[r_index];      // rectangle offset x
@@ -434,19 +433,17 @@ inline float evalWeakClassifier(myCascade* cascade, int variance_norm_factor, in
     int tl_y = candidate_y + ry;
     int br_x = tl_x + rw;
     int br_y = tl_y + rh;
-    printf("[CPU DEBUG] First rectangle: tl=(%d,%d), br=(%d,%d)\n", tl_x, tl_y, br_x, br_y);
 
     // Compute the indices into the integral image.
     int width = cascade->sum.width;
     int idx_tl = tl_y * width + tl_x;
     int idx_br = br_y * width + br_x;
-    int val_tl = cascade->sum.data[idx_tl];
-    int val_br = cascade->sum.data[idx_br];
-    printf("[CPU DEBUG] Integral image indices: tl = %d, br = %d\n", idx_tl, idx_br);
-    printf("[CPU DEBUG] p0[tl] = %d, p0[br] = %d\n", val_tl, val_br);
 
-    printf("[CPU DEBUG] Candidate (%d,%d), Stage 0, Feature 0: sum1 = %d, sum2 = %d, sum3 = %d, final_sum = %d\n",
-           candidate_x, candidate_y, sum1, sum2, sum3, final_sum);
+    printf("[CPU DEBUG] First rect: tl=(%d,%d), br=(%d,%d), idx_tl=%d, idx_br=%d\n",
+               tl_x, tl_y, br_x, br_y, idx_tl, idx_br);
+
+    printf("[CPU DEBUG] Integral values: tl=%d, br=%d\n",
+               cascade->sum.data[idx_tl], cascade->sum.data[idx_br]);
 }
 
   if(final_sum >= t){
@@ -512,6 +509,19 @@ int runCascadeClassifier( myCascade* _cascade, MyPoint pt, int start_stage )
     variance_norm_factor = int_sqrt(variance_norm_factor);
   else
     variance_norm_factor = 1;
+
+  // debug integral information print here:
+  if (pt.x == DEBUG_CANDIDATE_X && pt.y == DEBUG_CANDIDATE_Y) {
+    printf("\n--------------------------------------------------\n");
+    printf("[CPU DEBUG] Candidate (%d,%d):\n", pt.x, pt.y);
+    printf("[CPU DEBUG] p_offset=%d, pq_offset=%d\n", p_offset, pq_offset);
+    printf("[CPU DEBUG] Integral values: p0=%d, p1=%d, p2=%d, p3=%d\n",
+        _cascade->p0[p_offset], _cascade->p1[p_offset], _cascade->p2[p_offset], _cascade->p3[p_offset]);
+    printf("[CPU DEBUG] Squared Integral values: pq0=%d, pq1=%d, pq2=%d, pq3=%d\n",
+        _cascade->pq0[pq_offset], _cascade->pq1[pq_offset], _cascade->pq2[pq_offset], _cascade->pq3[pq_offset]);
+    printf("[CPU DEBUG] mean=%u, var_norm=%u\n", mean, variance_norm_factor);
+    printf("--------------------------------------------------\n\n");
+}
 
   //printf("[CPU DEBUG] Candidate=(%d,%d): final variance_norm=%u\n", pt.x, pt.y, variance_norm_factor);
 
@@ -622,6 +632,9 @@ void ScaleImage_Invoker( myCascade* _cascade, float _factor, int sum_row, int su
    *******************************************/
   step = 1;
 
+    // Add a local print counter
+    int debug_print_count = 0;
+
   /**********************************************
    * Shift the filter window over the image.
    * Each shift step is independent.
@@ -635,6 +648,11 @@ void ScaleImage_Invoker( myCascade* _cascade, float _factor, int sum_row, int su
   for( x = 0; x <= x2-1; x += step )        //changed x <= x2 ...to... x <= x2-1
     for( y = y1; y <= y2-1; y += step )     //changed y <= y2 ...to... y <= y2-1
       {
+      // debug print: iterations 4,5,6, limited to first 10 prints total
+      if (debug_print_count < 5) {
+        printf("[CPU Debug] x=%d, y=%d, x_max=%d, y_max=%d\n", x, y, x2, y2);
+        debug_print_count++;  // Increment after each print
+      }
 	p.x = x;
 	p.y = y;
 
@@ -643,6 +661,10 @@ void ScaleImage_Invoker( myCascade* _cascade, float _factor, int sum_row, int su
 	 * The same cascade filter is used each time
 	 ********************************************/
 	result = runCascadeClassifier( cascade, p, 0 );
+
+  if (result > 0) {
+    printf("\nRESULT: %d\n", result);
+}
 
 	/*******************************************************
 	 * If a face is detected,

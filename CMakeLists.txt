@@ -23,8 +23,8 @@ include_directories(
 set(SRC_FILES
     ${PROJECT_SOURCE_DIR}/src/cuda_detect.cu
     ${PROJECT_SOURCE_DIR}/src/main_cuda.cpp
-    ${PROJECT_SOURCE_DIR}/third_party/viola-jones/image.c
-    ${PROJECT_SOURCE_DIR}/third_party/viola-jones/haar.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/viola-jones/image_cuda.c
+    ${PROJECT_SOURCE_DIR}/third_party/viola-jones/haar_cuda.cpp
     ${PROJECT_SOURCE_DIR}/third_party/viola-jones/rectangles.cpp
 )
 

@@ -37,6 +37,11 @@ __constant__ int* d_tree_thresh_array;
 // Declaration of atomicCAS.
 extern __device__ int atomicCAS(int* address, int compare, int val);
 
+
+// ---------------------------------------------------------------------
+// Global device variable for debug print count
+__device__ int d_debug_print_count = 0;
+
 // ---------------------------------------------------------------------
 // Device function: Integer square root for the GPU.
 // This function replicates the behavior of the CPU's int_sqrt.
@@ -85,18 +90,6 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int br1_x = tl1_x + (int)myRound_device(rect[2]);
     int br1_y = tl1_y + (int)myRound_device(rect[3]);
 
-    // For the debug candidate, print the first rectangle’s computed coordinates.
-    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
-        haar_counter == 0 && w_index == 0 && r_index == 0) {
-        printf("[Device DEBUG] First rectangle: tl=(%d,%d), br=(%d,%d)\n",
-            tl1_x, tl1_y, br1_x, br1_y);
-        // Also print some integral image values:
-        int idx_tl1 = tl1_y * d_cascade->sum.width + tl1_x;
-        int idx_br1 = br1_y * d_cascade->sum.width + br1_x;
-        printf("[Device DEBUG] p0 at tl: %d, at br: %d\n", d_cascade->p0[idx_tl1], d_cascade->p0[idx_br1]);
-    }
-
-
     // Check bounds
     assert(tl1_x >= 0 && tl1_x < d_cascade->sum.width);
     assert(tl1_y >= 0 && tl1_y < d_cascade->sum.height);
@@ -112,17 +105,18 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int sum1 = d_cascade->p0[idx_br1] - d_cascade->p0[idx_tr1] - d_cascade->p0[idx_bl1] + d_cascade->p0[idx_tl1];
     sum1 = sum1 * d_weights_array[w_index + 0];
 
+
+    // Debug Statement for First Rectangle
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0) {
+        printf("[Device DEBUG] Rect 1: tl=(%d,%d), br=(%d,%d), sum1=%d, weight=%d\n",
+            tl1_x, tl1_y, br1_x, br1_y, sum1, d_weights_array[w_index]);
+    }
+
     // --- Second Rectangle ---
     int tl2_x = p.x + (int)myRound_device(rect[4]);
     int tl2_y = p.y + (int)myRound_device(rect[5]);
     int br2_x = tl2_x + (int)myRound_device(rect[6]);
     int br2_y = tl2_y + (int)myRound_device(rect[7]);
-
-
-    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
-        haar_counter == 0 && w_index == 0 && r_index == 0) {
-        printf("[Device DEBUG] Second rectangle: tl=(%d,%d), br=(%d,%d)\n", tl2_x, tl2_y, br2_x, br2_y);
-    }
 
     assert(tl2_x >= 0 && tl2_x < d_cascade->sum.width);
     assert(tl2_y >= 0 && tl2_y < d_cascade->sum.height);
@@ -137,6 +131,12 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 
     int sum2 = d_cascade->p0[idx_br2] - d_cascade->p0[idx_tr2] - d_cascade->p0[idx_bl2] + d_cascade->p0[idx_tl2];
     sum2 = sum2 * d_weights_array[w_index + 1];
+
+    // Debug Statement for Second Rectangle
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0) {
+        printf("[Device DEBUG] Rect 2: tl=(%d,%d), br=(%d,%d), sum2=%d, weight=%d\n",
+            tl2_x, tl2_y, br2_x, br2_y, sum2, d_weights_array[w_index + 1]);
+    }
 
     int total_sum = sum1 + sum2;
 
@@ -165,61 +165,70 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
         int idx_bl3 = br3_y * d_cascade->sum.width + tl3_x;
         int idx_br3 = br3_y * d_cascade->sum.width + br3_x;
         sum3 = d_cascade->p0[idx_br3] - d_cascade->p0[idx_tr3] - d_cascade->p0[idx_bl3] + d_cascade->p0[idx_tl3];
-        total_sum += sum3 * d_weights_array[w_index + 2];
+        sum3 *= d_weights_array[w_index + 2];
+        total_sum += sum3;
+
+        // Debug Statement for Third Rectangle (only if it exists)
+        if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0) {
+            printf("[Device DEBUG] Rect 3: tl=(%d,%d), br=(%d,%d), sum3=%d, weight=%d\n",
+                tl3_x, tl3_y, br3_x, br3_y, sum3, d_weights_array[w_index + 2]);
+        }
+
+    }
+    int threshold = d_tree_thresh_array[haar_counter] * (variance_norm_factor);
+
+    // Debug only for the specific candidate and first few features
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter < 5) {
+        printf("[Device DEBUG] Candidate (%d,%d), Feature %d: sum1=%d, sum2=%d, sum3=%d, total_sum=%d, threshold=%d\n",
+            p.x, p.y, haar_counter, sum1, sum2, sum3, total_sum, threshold);
     }
 
-    // Debug print for a specific candidate at stage 0, feature 0.
-    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0 && w_index == 0 && r_index == 0) {
-        printf("[Device DEBUG] Candidate (%d,%d), Stage 0, Feature 0: sum1 = %d, sum2 = %d, sum3 = %d, final_sum = %d\n",
-            p.x, p.y, sum1, sum2, sum3, total_sum);
-    }
-
-
-    int t =d_tree_thresh_array[haar_counter] * (variance_norm_factor);
-
-    return (total_sum >= t) ? d_alpha2_array[haar_counter] : d_alpha1_array[haar_counter];
+    return (total_sum >= threshold) ? d_alpha2_array[haar_counter] : d_alpha1_array[haar_counter];
 }
 
 
-// ---------------------------------------------------------------------
-// Device function: Run the cascade classifier on a candidate window.
-__device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsum, 
+__device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsum,
     const myCascade* d_cascade, MyPoint p, int start_stage, float scaleFactor)
-{   
-    // For the debug candidate, print the p_offset and a few integral image values.
-    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
-        printf("\n\nEntered runCascadeClassifier_device\n\n");
-    }
+{
+    int width = d_cascade->sum.width;
 
-    // Ensure candidate window is within bounds.
-    assert(p.x >= 0 && p.x < d_cascade->sum.width);
-    assert(p.y >= 0 && p.y < d_cascade->sum.height);
-
-    int p_offset = p.y * d_cascade->sum.width + p.x;
-    assert(p_offset < d_cascade->sum.width * d_cascade->sum.height);
-
+    // Compute candidate offsets
+    int p_offset = p.y * width + p.x;
     int pq_offset = p.y * d_cascade->sqsum.width + p.x;
-    assert(pq_offset < d_cascade->sqsum.width * d_cascade->sqsum.height);
 
-    // For the debug candidate, print the p_offset and a few integral image values.
-    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
-        printf("[Device DEBUG] p_offset = %d, p0[p_offset] = %d\n", p_offset, d_cascade->p0[p_offset]);
-    }
+    // Compute the integral image values at the four corners
+    int top_left = d_cascade->p0[p_offset];
+    int top_right = d_cascade->p1[p_offset];
+    int bottom_left = d_cascade->p2[p_offset];
+    int bottom_right = d_cascade->p3[p_offset];
 
-    // Compute the mean and variance from the integral images.
-    unsigned int var_norm = (d_cascade->pq0[pq_offset] - d_cascade->pq1[pq_offset]
-        - d_cascade->pq2[pq_offset] + d_cascade->pq3[pq_offset]);
-    unsigned int mean = (d_cascade->p0[p_offset] - d_cascade->p1[p_offset]
-        - d_cascade->p2[p_offset] + d_cascade->p3[p_offset]);
+    int mean = bottom_right - top_right - bottom_left + top_left;
 
-    var_norm = (var_norm * d_cascade->inv_window_area) - mean * mean;
+    int sq_top_left = d_cascade->pq0[pq_offset];
+    int sq_top_right = d_cascade->pq1[pq_offset];
+    int sq_bottom_left = d_cascade->pq2[pq_offset];
+    int sq_bottom_right = d_cascade->pq3[pq_offset];
+
+    int var_norm = (sq_bottom_right - sq_top_right - sq_bottom_left + sq_top_left);
+    var_norm = (int)((var_norm * d_cascade->inv_window_area) - mean * mean);
+
     if (var_norm > 0)
-		var_norm = int_sqrt_device(var_norm);
+        var_norm = int_sqrt_device(var_norm);
     else
         var_norm = 1;
 
+#ifdef FINCAL_DEBUG
+    // Integral Debugging 
     if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
+		printf("\n--------------------------------------------------\n");
+        printf("[Device DEBUG] Candidate (%d,%d):\n", p.x, p.y);
+        printf("[Device DEBUG] Integral corners: p0=%d, p1=%d, p2=%d, p3=%d\n",
+            d_cascade->p0[p_offset], d_cascade->p1[p_offset], d_cascade->p2[p_offset], d_cascade->p3[p_offset]);
+        printf("[Device DEBUG] Squared integral corners: pq0=%d, pq1=%d, pq2=%d, pq3=%d\n",
+            d_cascade->pq0[pq_offset], d_cascade->pq1[pq_offset],
+            d_cascade->pq2[pq_offset], d_cascade->pq3[pq_offset]);
         printf("[Device DEBUG] mean = %u, var_norm = %u\n", mean, var_norm);
+        printf("--------------------------------------------------\n\n");
     }
 
     int haar_counter = 0;
@@ -231,33 +240,22 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
         stage_sum = 0.0f;
         int num_features = d_stages_array[i];
 
-        if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
-            printf("[Device DEBUG] Stage %d: num_features = %d\n", i, num_features);
-        }
-
-        // Check that processing this stage won't overrun our classifier arrays.
-        if (haar_counter + num_features > d_cascade->total_nodes) {
-            return 1;
-        }
         for (int j = 0; j < num_features; j++) {
-
-            // Compute the feature response.
-            int feature_result = evalWeakClassifier_device(d_cascade, (int)var_norm, p, 
+            int feature_result = evalWeakClassifier_device(d_cascade, (int)var_norm, p,
                 haar_counter, w_index, r_index, scaleFactor);
-                stage_sum += feature_result;
-                if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && i == 0 && j == 0) {
-                    printf("[Device DEBUG] After feature %d: stage_sum = %f\n", j, stage_sum);
-                }
+            stage_sum += feature_result;
 
-                haar_counter++;
-                w_index += 3;    // advance the weight index by 3 (since 3 weights per feature)
-                r_index += 12;   // advance the rectangle index by 12 (since 12 ints per feature)
+            haar_counter++;
+            w_index += 3;
+            r_index += 12;
         }
+
+        // Debugging after each stage:
         if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
-            printf("[Device DEBUG] Stage %d: stage_sum = %f, threshold = %f\n", i, stage_sum, 0.4f * d_stages_thresh_array[i]);
+            printf("[Device DEBUG] Stage %d complete: stage_sum = %f, threshold = %f\n",
+                i, stage_sum, 0.4f * d_stages_thresh_array[i]);
         }
 
-        /* the number "0.4" is empirically chosen for 5kk73 */
         if (stage_sum < 0.4 * d_stages_thresh_array[i])
             return -i;
     }
@@ -278,6 +276,12 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int current_count = atomicAdd(&d_debug_print_count, 1);
+
+    if (current_count < 10) {
+        printf("[GPU Debug: detectKernel] x=%d, y=%d, x_max=%d, y_max=%d)\n",
+            x, y, x_max, y_max);
+    }
 
     // Debug: For the first thread in each block, print x and y
     if (threadIdx.x == 0 && threadIdx.y == 0) {
@@ -287,24 +291,39 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
 
     // Check the bounds unconditionally for a few threads
     if (x >= x_max || y >= y_max) {
-        // For a small number of threads, print why we return early.
-        if (x < x_max + 10 && y < y_max + 10) {
-            //printf("[Device DEBUG] Returning early: x=%d, y=%d (x_max=%d, y_max=%d)\n", x, y, x_max, y_max);
+        
+        // debug print: iterations 4,5,6, limited to first 10 prints
+        if (1) {
+            // Atomically increment global print count and check limi
+            if (current_count < 10) {
+                printf("[GPU Debug: (x >= x_max || y >= y_max)] x=%d, y=%d, x_max=%d, y_max=%d)\n",
+                    x, y, x_max, y_max);
+            }
         }
         return;
     }
     
+    if (current_count == 2) {
+        printf("\nMADE IT PAST if (x >= x_max || y >= y_max)\n");
+    }
 
     MyPoint p;
     p.x = x;
     p.y = y;
 
-    // For the debug candidate, print the p_offset and a few integral image values.
-    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
-        printf("\n\nINSIDE DETECTKERNEL\n\n");
+    if (current_count == 2) {
+        printf("\nMADE IT PAST p.x and p.y assignments\n");
     }
 
     int result = runCascadeClassifier_device(d_sum, d_sqsum, d_cascade, p, 0, scaleFactor);
+
+    if (current_count == 2) {
+        printf("\nMADE IT PAST p.x and p.y runCascadeClassifier_device. \n RESULT: %d\n\n", result);
+    }
+
+    if (result > 0) {
+        printf("\nResult positiive!\n RESULT: %d\n\n", result);
+    }
 
     if (result > 0) {
         MyRect r;
@@ -324,7 +343,7 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
 // runDetection in cuda_detect.cu
 std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     myCascade* cascade, int maxCandidates,
-    float scaleFactor, int extra_x, int extra_y)
+    float scaleFactor, int extra_x, int extra_y, int iter_counter)
 {
     std::vector<MyRect> candidates;
 
@@ -333,7 +352,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     MyIntImage* d_sum = nullptr;
     CUDA_CHECK(cudaMallocManaged((void**)&d_sum, sizeof(MyIntImage)));
     CUDA_CHECK(cudaMallocManaged((void**)&(d_sum->data), dataSize));
-    memcpy(d_sum->data, h_sum->data, dataSize);
+    CUDA_CHECK(cudaMemcpy(d_sum->data, h_sum->data, dataSize, cudaMemcpyHostToDevice));
     d_sum->width = h_sum->width;
     d_sum->height = h_sum->height;
 
@@ -342,7 +361,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     MyIntImage* d_sqsum = nullptr;
     CUDA_CHECK(cudaMallocManaged((void**)&d_sqsum, sizeof(MyIntImage)));
     CUDA_CHECK(cudaMallocManaged((void**)&(d_sqsum->data), dataSize));
-    memcpy(d_sqsum->data, h_sqsum->data, dataSize);
+    CUDA_CHECK(cudaMemcpy(d_sqsum->data, h_sqsum->data, dataSize, cudaMemcpyHostToDevice));
     d_sqsum->width = h_sqsum->width;
     d_sqsum->height = h_sqsum->height;
 
@@ -438,12 +457,9 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     int baseWidth = cascade->orig_window_size.width;
     int baseHeight = cascade->orig_window_size.height;
 
-    int detectionWindowWidth = (baseWidth + extra_x) * scaleFactor;
-    int detectionWindowHeight = (baseHeight + extra_y) * scaleFactor;
-
     // Compute maximum valid starting positions for the sliding window.
-    int x_max = d_sum->width - detectionWindowWidth;
-    int y_max = d_sum->height - detectionWindowHeight;
+    int x_max = d_sum->width - baseWidth;
+    int y_max = d_sum->height - baseHeight;
     if (x_max < 0) x_max = 0;
     if (y_max < 0) y_max = 0;
     printf("[Host DEBUG] Search space dimensions (with extra margins): x_max=%d, y_max=%d\n", x_max, y_max);
@@ -455,7 +471,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
         gridDim.x, gridDim.y, blockDim.x, blockDim.y);
 
     printf("\nDetection window: %d x %d, x_max=%d, y_max=%d\n",
-        detectionWindowWidth, detectionWindowHeight, x_max, y_max);
+        baseWidth, baseHeight, x_max, y_max);
 
 
     // Launch the kernel with the original base window size for classification.
@@ -469,6 +485,9 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     printf("[Kernel Launch Debug] gridDim = (%d, %d), blockDim = (%d, %d)\n",
         gridDim.x, gridDim.y, blockDim.x, blockDim.y);
     printf("\n-------------------------------------------------------------------------------\n");
+
+    int zero = 0;
+    CUDA_CHECK(cudaMemcpyToSymbol(d_debug_print_count, &zero, sizeof(int)));
 
     detectKernel << <gridDim, blockDim >> > (d_sum, d_sqsum, d_cascade, scaleFactor, x_max, y_max, d_candidates, d_candidateCount, maxCandidates);
     CUDA_CHECK(cudaGetLastError());
