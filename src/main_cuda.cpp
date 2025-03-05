@@ -137,8 +137,17 @@ int main() {
     nearestNeighbor(image, &scaledImg);
     integralImages(&scaledImg, &scaledSum, &scaledSqSum);
 
+    // After: integralImages(&scaledImg, &scaledSum, &scaledSqSum);
+    printf("\n\nScaled image dimensions: %d x %d\n", scaledImg.width, scaledImg.height);
+    printf("Integral image p0 at index 2948954: %d\n", scaledSum.data[2948954]);
+    printf("Integral image p0 at index 2979557: %d\n", scaledSum.data[2979557]);
+
     // Link the scaled images to the cascade.
     setImageForCascadeClassifier(cascade, &scaledSum, &scaledSqSum);
+
+    printf("Cascade p0 pointer: %p\n", (void*)cascade->sum.data);
+    printf("Cascade sum image width: %d\n\n", cascade->sum.width);
+
 
     printf("Detecting faces at fixed scale factor %.3f...\n", factor);
     std::vector<MyRect> candidates = runDetection(&scaledSum, &scaledSqSum, cascade, maxCandidates, factor, adjusted_width, adjusted_height);
