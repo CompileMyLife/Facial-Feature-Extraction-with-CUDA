@@ -80,14 +80,20 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int* rect = d_rectangles_array + r_index;
 
     // --- First Rectangle ---
-    int tl1_x = p.x + (int)myRound_device(rect[0] * scaleFactor);
-    int tl1_y = p.y + (int)myRound_device(rect[1] * scaleFactor);
-    int br1_x = tl1_x + (int)myRound_device(rect[2] * scaleFactor);
-    int br1_y = tl1_y + (int)myRound_device(rect[3] * scaleFactor);
+    int tl1_x = p.x + (int)myRound_device(rect[0]);
+    int tl1_y = p.y + (int)myRound_device(rect[1]);
+    int br1_x = tl1_x + (int)myRound_device(rect[2]);
+    int br1_y = tl1_y + (int)myRound_device(rect[3]);
 
+    // For the debug candidate, print the first rectangle’s computed coordinates.
     if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
         haar_counter == 0 && w_index == 0 && r_index == 0) {
-        printf("[Device DEBUG] First rectangle: tl=(%d,%d), br=(%d,%d)\n", tl1_x, tl1_y, br1_x, br1_y);
+        printf("[Device DEBUG] First rectangle: tl=(%d,%d), br=(%d,%d)\n",
+            tl1_x, tl1_y, br1_x, br1_y);
+        // Also print some integral image values:
+        int idx_tl1 = tl1_y * d_cascade->sum.width + tl1_x;
+        int idx_br1 = br1_y * d_cascade->sum.width + br1_x;
+        printf("[Device DEBUG] p0 at tl: %d, at br: %d\n", d_cascade->p0[idx_tl1], d_cascade->p0[idx_br1]);
     }
 
 
@@ -107,10 +113,10 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     sum1 = sum1 * d_weights_array[w_index + 0];
 
     // --- Second Rectangle ---
-    int tl2_x = p.x + (int)myRound_device(rect[4] * scaleFactor);
-    int tl2_y = p.y + (int)myRound_device(rect[5] * scaleFactor);
-    int br2_x = tl2_x + (int)myRound_device(rect[6] * scaleFactor);
-    int br2_y = tl2_y + (int)myRound_device(rect[7] * scaleFactor);
+    int tl2_x = p.x + (int)myRound_device(rect[4]);
+    int tl2_y = p.y + (int)myRound_device(rect[5]);
+    int br2_x = tl2_x + (int)myRound_device(rect[6]);
+    int br2_y = tl2_y + (int)myRound_device(rect[7]);
 
 
     if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
@@ -139,10 +145,10 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     // --- Third Rectangle (if present) ---
     if (d_weights_array[w_index + 2] != 0)
     {
-        int tl3_x = p.x + (int)myRound_device(rect[8] * scaleFactor);
-        int tl3_y = p.y + (int)myRound_device(rect[9] * scaleFactor);
-        int br3_x = tl3_x + (int)myRound_device(rect[10] * scaleFactor);
-        int br3_y = tl3_y + (int)myRound_device(rect[11] * scaleFactor);
+        int tl3_x = p.x + (int)myRound_device(rect[8]);
+        int tl3_y = p.y + (int)myRound_device(rect[9]);
+        int br3_x = tl3_x + (int)myRound_device(rect[10]);
+        int br3_y = tl3_y + (int)myRound_device(rect[11]);
 
         if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
             haar_counter == 0 && w_index == 0 && r_index == 0) {
@@ -187,10 +193,13 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
     int p_offset = p.y * d_cascade->sum.width + p.x;
     assert(p_offset < d_cascade->sum.width * d_cascade->sum.height);
 
-
-
     int pq_offset = p.y * d_cascade->sqsum.width + p.x;
     assert(pq_offset < d_cascade->sqsum.width * d_cascade->sqsum.height);
+
+    // For the debug candidate, print the p_offset and a few integral image values.
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
+        printf("[Device DEBUG] p_offset = %d, p0[p_offset] = %d\n", p_offset, d_cascade->p0[p_offset]);
+    }
 
     // Compute the mean and variance from the integral images.
     unsigned int var_norm = (d_cascade->pq0[pq_offset] - d_cascade->pq1[pq_offset]
@@ -204,6 +213,10 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
     else
         var_norm = 1;
 
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
+        printf("[Device DEBUG] mean = %u, var_norm = %u\n", mean, var_norm);
+    }
+
     int haar_counter = 0;
     int w_index = 0;
     int r_index = 0;
@@ -212,6 +225,10 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
     for (int i = start_stage; i < d_cascade->n_stages; i++) {
         stage_sum = 0.0f;
         int num_features = d_stages_array[i];
+
+        if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
+            printf("[Device DEBUG] Stage %d: num_features = %d\n", i, num_features);
+        }
 
         // Check that processing this stage won't overrun our classifier arrays.
         if (haar_counter + num_features > d_cascade->total_nodes) {
@@ -223,9 +240,16 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
             int feature_result = evalWeakClassifier_device(d_cascade, (int)var_norm, p, 
                 haar_counter, w_index, r_index, scaleFactor);
                 stage_sum += feature_result;
+                if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && i == 0 && j == 0) {
+                    printf("[Device DEBUG] After feature %d: stage_sum = %f\n", j, stage_sum);
+                }
+
                 haar_counter++;
                 w_index += 3;    // advance the weight index by 3 (since 3 weights per feature)
                 r_index += 12;   // advance the rectangle index by 12 (since 12 ints per feature)
+        }
+        if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
+            printf("[Device DEBUG] Stage %d: stage_sum = %f, threshold = %f\n", i, stage_sum, 0.4f * d_stages_thresh_array[i]);
         }
 
         /* the number "0.4" is empirically chosen for 5kk73 */
