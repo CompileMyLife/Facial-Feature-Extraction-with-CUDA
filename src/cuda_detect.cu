@@ -185,7 +185,12 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 // Device function: Run the cascade classifier on a candidate window.
 __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsum, 
     const myCascade* d_cascade, MyPoint p, int start_stage, float scaleFactor)
-{
+{   
+    // For the debug candidate, print the p_offset and a few integral image values.
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
+        printf("\n\nEntered runCascadeClassifier_device\n\n");
+    }
+
     // Ensure candidate window is within bounds.
     assert(p.x >= 0 && p.x < d_cascade->sum.width);
     assert(p.y >= 0 && p.y < d_cascade->sum.height);
@@ -269,19 +274,35 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
     MyRect* d_candidates, int* d_candidateCount,
     int maxCandidates)
 {
-	//printf("[Device] entered detectKernel\n");
+	
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x >= x_max || y >= y_max)
+    // Debug: For the first thread in each block, print x and y
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
+        //printf("[Device DEBUG] Block (%d,%d): first thread: x=%d, y=%d, x_max=%d, y_max=%d\n",
+            //blockIdx.x, blockIdx.y, x, y, x_max, y_max);
+    }
+
+    // Check the bounds unconditionally for a few threads
+    if (x >= x_max || y >= y_max) {
+        // For a small number of threads, print why we return early.
+        if (x < x_max + 10 && y < y_max + 10) {
+            //printf("[Device DEBUG] Returning early: x=%d, y=%d (x_max=%d, y_max=%d)\n", x, y, x_max, y_max);
+        }
         return;
+    }
+    
 
     MyPoint p;
     p.x = x;
     p.y = y;
 
-
+    // For the debug candidate, print the p_offset and a few integral image values.
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
+        printf("\n\nINSIDE DETECTKERNEL\n\n");
+    }
 
     int result = runCascadeClassifier_device(d_sum, d_sqsum, d_cascade, p, 0, scaleFactor);
 
@@ -296,7 +317,7 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
         if (idx < maxCandidates) {
             d_candidates[idx] = r;
         }
-       
+
     }
 }
 
@@ -421,8 +442,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     int detectionWindowHeight = (baseHeight + extra_y) * scaleFactor;
 
     // Compute maximum valid starting positions for the sliding window.
-    int x_max = d_sum->width - detectionWindowWidth -1;
-    int y_max = d_sum->height - detectionWindowHeight -1;
+    int x_max = d_sum->width - detectionWindowWidth;
+    int y_max = d_sum->height - detectionWindowHeight;
     if (x_max < 0) x_max = 0;
     if (y_max < 0) y_max = 0;
     printf("[Host DEBUG] Search space dimensions (with extra margins): x_max=%d, y_max=%d\n", x_max, y_max);
@@ -433,8 +454,22 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     printf("[Host] Launching kernel with gridDim=(%d, %d), blockDim=(%d, %d)\n",
         gridDim.x, gridDim.y, blockDim.x, blockDim.y);
 
+    printf("\nDetection window: %d x %d, x_max=%d, y_max=%d\n",
+        detectionWindowWidth, detectionWindowHeight, x_max, y_max);
+
+
     // Launch the kernel with the original base window size for classification.
     CUDA_CHECK(cudaDeviceSynchronize());
+
+    printf("\n-------------------------------------------------------------------------------\n");
+    printf("[Kernel Launch Debug] scaleFactor = %.3f, x_max = %d, y_max = %d, maxCandidates = %d\n",
+        scaleFactor, x_max, y_max, maxCandidates);
+    printf("[Kernel Launch Debug] d_sum = %p, d_sqsum = %p, d_cascade = %p, d_candidates = %p, d_candidateCount = %p\n",
+        (void*)d_sum, (void*)d_sqsum, (void*)d_cascade, (void*)d_candidates, (void*)d_candidateCount);
+    printf("[Kernel Launch Debug] gridDim = (%d, %d), blockDim = (%d, %d)\n",
+        gridDim.x, gridDim.y, blockDim.x, blockDim.y);
+    printf("\n-------------------------------------------------------------------------------\n");
+
     detectKernel << <gridDim, blockDim >> > (d_sum, d_sqsum, d_cascade, scaleFactor, x_max, y_max, d_candidates, d_candidateCount, maxCandidates);
     CUDA_CHECK(cudaGetLastError());
     printf("[Host DEBUG] Kernel launched.\n");

@@ -256,12 +256,12 @@ int cpyPgm(MyImage* src, MyImage* dst)
 }
 
 
-void createImage(int width, int height, MyImage *image)
-{
+void createImage(int width, int height, MyImage* image) {
 	image->width = width;
 	image->height = height;
 	image->flag = 1;
-	image->data = (unsigned char *)malloc(sizeof(unsigned char)*(height*width));
+	image->allocatedSize = width * height;
+	image->data = (unsigned char*)malloc(sizeof(unsigned char) * image->allocatedSize);
 }
 
 void createSumImage(int width, int height, MyIntImage *image)
@@ -302,8 +302,16 @@ int freeSumImage(MyIntImage* image)
 	}
 }
 
-void setImage(int width, int height, MyImage *image)
-{
+void setImage(int width, int height, MyImage* image) {
+	int requiredSize = width * height;
+	if (requiredSize > image->allocatedSize) {
+		// Free the old buffer, then allocate a new one.
+		if (image->data != NULL) {
+			free(image->data);
+		}
+		image->data = (unsigned char*)malloc(sizeof(unsigned char) * requiredSize);
+		image->allocatedSize = requiredSize;
+	}
 	image->width = width;
 	image->height = height;
 }

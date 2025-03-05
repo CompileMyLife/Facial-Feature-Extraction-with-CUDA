@@ -667,43 +667,49 @@ void integralImages( MyImage *src, MyIntImage *sum, MyIntImage *sqsum )
  * This function downsample an image using nearest neighbor
  * It is used to build the image pyramid
  **********************************************************/
-void nearestNeighbor (MyImage *src, MyImage *dst)
-{
+void nearestNeighbor(MyImage* src, MyImage* dst) {
+    int i, j, x, y, rat;
+    unsigned char* t;
+    unsigned char* p;
+    int w1 = src->width;
+    int h1 = src->height;
+    int w2 = dst->width;
+    int h2 = dst->height;
 
-  int y;
-  int j;
-  int x;
-  int i;
-  unsigned char* t;
-  unsigned char* p;
-  int w1 = src->width;
-  int h1 = src->height;
-  int w2 = dst->width;
-  int h2 = dst->height;
+    printf("In nearestNeighbor: src->data = %p, dst->data = %p, w1=%d, h1=%d, w2=%d, h2=%d\n",
+        src->data, dst->data, w1, h1, w2, h2);
 
-  int rat = 0;
+    if (w2 <= 0 || h2 <= 0) {
+        printf("Destination dimensions invalid: w2=%d, h2=%d\n", w2, h2);
+        return;
+    }
 
-  unsigned char* src_data = src->data;
-  unsigned char* dst_data = dst->data;
+    unsigned char* src_data = src->data;
+    unsigned char* dst_data = dst->data;
 
+    int x_ratio = (int)((w1 << 16) / w2) + 1;
+    int y_ratio = (int)((h1 << 16) / h2) + 1;
 
-  int x_ratio = (int)((w1<<16)/w2) +1;
-  int y_ratio = (int)((h1<<16)/h2) +1;
-
-  for (i=0;i<h2;i++)
-    {
-      t = dst_data + i*w2;
-      y = ((i*y_ratio)>>16);
-      p = src_data + y*w1;
-      rat = 0;
-      for (j=0;j<w2;j++)
-	{
-	  x = (rat>>16);
-	  *t++ = p[x];
-	  rat += x_ratio;
-	}
+    for (i = 0; i < h2; i++) {
+        t = dst_data + i * w2;
+        y = ((i * y_ratio) >> 16);
+        if (y < 0 || y >= h1) {
+            printf("Invalid y = %d at iteration i=%d\n", y, i);
+            y = (y < 0) ? 0 : h1 - 1;
+        }
+        p = src_data + y * w1;
+        rat = 0;
+        for (j = 0; j < w2; j++) {
+            x = (rat >> 16);
+            if (x >= w1) {  // Ensure x is within bounds
+                x = w1 - 1;
+            }
+            *t++ = p[x];
+            rat += x_ratio;
+        }
     }
 }
+
 
 void readTextClassifier(myCascade* cascade) // Modified function to accept myCascade*
 {

@@ -134,23 +134,20 @@ int main() {
     int adjusted_height = cascade->orig_window_size.height + extra_y;
     printf("Adjusted detection window size: (%d, %d)\n", adjusted_width, adjusted_height);
 
-    // ***** NEW STEP: Allocate temporary buffers once using full original image dimensions *****
-    // This mimics the CPU code which calls:
-    //   createImage(img->width, img->height, img1);
-    //   createSumImage(img->width, img->height, sum1);
-    //   createSumImage(img->width, img->height, sqsum1);
-    // We allocate buffers here and then re-set their dimensions inside the scale loop.
+    // Allocate buffers
     MyImage scaledImg;
     createImage(image->width, image->height, &scaledImg);
     MyIntImage scaledSum, scaledSqSum;
     createSumImage(image->width, image->height, &scaledSum);
     createSumImage(image->width, image->height, &scaledSqSum);
-
-    // ***** Now iterate over scales using these temporary buffers *****
     float factor = 1.0f;
-    std::vector<MyRect> candidates;
+
+// ***** Run CUDA detection at each scale in the pyramid *****
+// Here we demonstrate running CUDA detection for each valid scale.
+// We'll loop over the scales again, performing CUDA detection and merging results.
+    std::vector<MyRect> allGpuCandidates;
+    factor = 1.0f;
     while (true) {
-        iter_counter++;
         int newWidth = (int)(image->width / factor);
         int newHeight = (int)(image->height / factor);
         int winWidth = myRound(cascade->orig_window_size.width * factor);
@@ -166,55 +163,40 @@ int main() {
             continue;
         }
 
-        // Reset the temporary buffers to the new scaled dimensions.
-        setImage(newWidth, newHeight, &scaledImg);
-        setSumImage(newWidth, newHeight, &scaledSum);
-        setSumImage(newWidth, newHeight, &scaledSqSum);
+        // Reallocate buffers for this scale in the CUDA loop.
+        freeImage(&scaledImg);
+        freeSumImage(&scaledSum);
+        freeSumImage(&scaledSqSum);
+        createImage(newWidth, newHeight, &scaledImg);
+        createSumImage(newWidth, newHeight, &scaledSum);
+        createSumImage(newWidth, newHeight, &scaledSqSum);
 
-        // Downsample the original image into our temporary buffer.
         nearestNeighbor(image, &scaledImg);
-
-        // Compute the integral images for the downsampled image.
         integralImages(&scaledImg, &scaledSum, &scaledSqSum);
-
-        // (Optional debug print for a particular iteration.)
-        if (iter_counter == 2) {
-            printf("DEBUG: Scale iteration %d, factor = %.3f\n", iter_counter, factor);
-            debugPrintIntegralImageGPU(&scaledSum, 10);
-        }
-
-        // Update the cascade with these integral images.
         setImageForCascadeClassifier(cascade, &scaledSum, &scaledSqSum);
-        printf("detecting faces, iter := %d\n", iter_counter);
 
-        // Process this scale with the cascade filter.
-        ScaleImage_Invoker(cascade, factor, scaledSum.height, scaledSum.width, candidates);
-
+        // Check if the detection window fits in the scaled integral image.
+        if (factor * (cascade->orig_window_size.width + extra_x) < scaledSum.width &&
+            factor * (cascade->orig_window_size.height + extra_y) < scaledSum.height) {
+            std::vector<MyRect> gpuCandidates = runDetection(&scaledSum, &scaledSqSum, cascade, 10000000, factor, adjusted_width, adjusted_height);
+            // Merge candidates from this scale.
+            allGpuCandidates.insert(allGpuCandidates.end(), gpuCandidates.begin(), gpuCandidates.end());
+        }
+        else {
+            printf("Scale factor %f too high for valid detection window at this iteration.\n", factor);
+        }
         factor *= 1.2f;
     }
 
-    // Optionally, perform grouping on the candidates.
-    if (!candidates.empty()) {
-        groupRectangles(candidates, minSize.width, 0.4f);
-    }
-
-    // Free temporary buffers.
-    freeImage(&scaledImg);
-    freeSumImage(&scaledSum);
-    freeSumImage(&scaledSqSum);
-
-    // ***** Now run CUDA detection using the same cascade and (last computed) scaled integral images.
-    printf("Detecting faces at fixed scale using CUDA...\n");
-    std::vector<MyRect> gpuCandidates = runDetection(&scaledSum, &scaledSqSum, cascade, 10000000, factor, adjusted_width, adjusted_height);
-    printf("CUDA detection detected %zu candidates.\n", gpuCandidates.size());
-    for (size_t i = 0; i < gpuCandidates.size(); i++) {
+    printf("CUDA detection detected %zu candidates.\n", allGpuCandidates.size());
+    for (size_t i = 0; i < allGpuCandidates.size(); i++) {
         printf("[DEBUG] CUDA Candidate %zu: x=%d, y=%d, width=%d, height=%d\n",
-            i, gpuCandidates[i].x, gpuCandidates[i].y, gpuCandidates[i].width, gpuCandidates[i].height);
+            i, allGpuCandidates[i].x, allGpuCandidates[i].y, allGpuCandidates[i].width, allGpuCandidates[i].height);
     }
 
     // 8. Draw candidate face boxes on the original image.
-    for (size_t i = 0; i < gpuCandidates.size(); i++) {
-        drawRectangle(image, gpuCandidates[i]);
+    for (size_t i = 0; i < allGpuCandidates.size(); i++) {
+        drawRectangle(image, allGpuCandidates[i]);
     }
 
     // 9. Save the output image.
@@ -230,6 +212,12 @@ int main() {
     freeImage(image);
     freeSumImage(sum);
     freeSumImage(sqsum);
+
+
+    // Free temporary buffers.
+    freeImage(&scaledImg);
+    freeSumImage(&scaledSum);
+    freeSumImage(&scaledSqSum);
 
     return 0;
 }

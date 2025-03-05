@@ -49,6 +49,7 @@ typedef struct
 	int maxgrey;
 	unsigned char* data;
 	int flag;
+	int allocatedSize;	// track allocated buffer size
 }
 MyImage;
 
