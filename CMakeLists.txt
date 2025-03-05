@@ -31,25 +31,25 @@ set(SRC_FILES
 # Create the executable target.
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
-# Set compile options depending on the compiler.
 if(MSVC)
-    # For C++ with MSVC:
+    # For C++ with MSVC: enable Edit and Continue (/ZI)
     target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:/std:c++14 /Zi /Od>
+        $<$<COMPILE_LANGUAGE:CXX>:/std:c++14 /ZI /Od>
     )
-    # For CUDA on Windows, add debug flags and specify target architecture for Nvidia 3060 Ti.
+    # For CUDA on Windows, add debug flags and specify target architecture (if needed)
     target_compile_options(${PROJECT_NAME} PRIVATE
         $<$<COMPILE_LANGUAGE:CUDA>:-g -G -arch=sm_86>
     )
-    # Suppress warnings about unsafe functions.
     target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 else()
-    # For non-MSVC systems (GCC/Clang).
+    # For non-MSVC systems
     target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-std=c++14 -g -G -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS>
-        $<$<COMPILE_LANGUAGE:CUDA>:-g -G --sanitize=address -arch=sm_86 -Wno-deprecated-gpu-targets>
+        $<$<COMPILE_LANGUAGE:CXX>:-std=c++14 -g>
+        $<$<COMPILE_LANGUAGE:CUDA>:-g -G -arch=sm_86>
     )
 endif()
+
+
 
 # Set linker options (force 64-bit machine).
 target_link_options(${PROJECT_NAME} PRIVATE "/MACHINE:X64")

@@ -10,6 +10,8 @@
 #define INPUT_FILENAME "Face.pgm"
 #define OUTPUT_FILENAME "Output.pgm"
 
+extern void nearestNeighbor(MyImage* src, MyImage* dst);
+
 // Helper function to scan classifier data and compute the extra offsets (in x and y)
 // that account for all rectangle extents beyond the base detection window.
 void computeExtraOffsets(const myCascade* cascade, int* extra_x, int* extra_y) {
@@ -63,7 +65,7 @@ int main() {
     else
         printf("-- test image saved as TestOutput.pgm --\n");
 
-    // 2. Compute integral images.
+    // 2. Compute integral images for the original image (used only for cascade initialization).
     MyIntImage sumObj, sqsumObj;
     MyIntImage* sum = &sumObj;
     MyIntImage* sqsum = &sqsumObj;
@@ -93,7 +95,7 @@ int main() {
         printf("cascade->scaled_rectangles_array is NOT NULL after readTextClassifier: %p\n", cascade->scaled_rectangles_array);
     }
 
-    // 4. Link integral images to the cascade.
+    // 4. Link integral images to the cascade (for initial setup).
     printf("-- linking integral images to cascade --\n");
     setImageForCascadeClassifier(cascade, sum, sqsum);
     printf("-- integral images linked to cascade --\n");
@@ -108,18 +110,87 @@ int main() {
     int adjusted_height = cascade->orig_window_size.height + extra_y;
     printf("Adjusted detection window size: (%d, %d)\n", adjusted_width, adjusted_height);
 
-    // 5. Run CUDA detection.
-    float scaleFactor = 1.2f;
-    int maxCandidates = 1000000000;  // Adjust as needed.
-    printf("-- detecting faces using CUDA --\n");
-    // Note: runDetection now must accept the adjusted window sizes.
-    std::vector<MyRect> result = runDetection(sum, sqsum, cascade, maxCandidates, scaleFactor, adjusted_width, adjusted_height);
+    // 5. Run multi-scale CUDA detection.
+    // We'll accumulate candidates from each scale.
+    std::vector<MyRect> allCandidates;
+
+    float scaleFactor = 1.2f;  // Scale increment factor
+    int maxCandidates = 1000000000;  // Adjust as needed
+
+    // Start with factor = 1, then multiply by scaleFactor each iteration.
+    // Loop until the downsampled image is too small for detection.
+    float factor = 1.0f;
+    int iter_counter = 0;
+    while (true) {
+        iter_counter++;
+        // Compute new window size for current scale.
+        int winWidth = (int)(cascade->orig_window_size.width * factor + 0.5f);
+        int winHeight = (int)(cascade->orig_window_size.height * factor + 0.5f);
+
+        // Compute scaled image size.
+        int scaledWidth = (int)(image->width / factor);
+        int scaledHeight = (int)(image->height / factor);
+
+        // If the scaled image is too small for even one detection window, break.
+        if (scaledWidth < cascade->orig_window_size.width || scaledHeight < cascade->orig_window_size.height)
+            break;
+
+        // Skip scales where the detection window is smaller than minSize.
+        if (winWidth < minSize.width || winHeight < minSize.height) {
+            factor *= scaleFactor;
+            continue;
+        }
+
+        printf("Scale iter %d: factor = %.3f, scaled image size = (%d, %d), detection window = (%d, %d)\n",
+            iter_counter, factor, scaledWidth, scaledHeight, winWidth, winHeight);
+
+        // Allocate temporary scaled image.
+        MyImage scaledImg;
+        createImage(scaledWidth, scaledHeight, &scaledImg);
+
+        // Allocate temporary integral images for the scaled image.
+        MyIntImage scaledSum, scaledSqSum;
+        createSumImage(scaledWidth, scaledHeight, &scaledSum);
+        createSumImage(scaledWidth, scaledHeight, &scaledSqSum);
+
+        // Downsample the original image to the current scale.
+        nearestNeighbor(image, &scaledImg);
+
+        // Compute integral images for the scaled image.
+        integralImages(&scaledImg, &scaledSum, &scaledSqSum);
+
+        // Link the scaled integral images to the cascade.
+        setImageForCascadeClassifier(cascade, &scaledSum, &scaledSqSum);
+
+        printf("Detecting faces at scale factor %.3f...\n", factor);
+        // Run CUDA detection at this scale.
+        std::vector<MyRect> candidates = runDetection(&scaledSum, &scaledSqSum, cascade, maxCandidates, factor, adjusted_width, adjusted_height);
+        printf("Scale factor %.3f detected %zu candidates.\n", factor, candidates.size());
+
+        // Accumulate candidate windows.
+        allCandidates.insert(allCandidates.end(), candidates.begin(), candidates.end());
+
+        // Free temporary scaled images and integral images.
+        freeImage(&scaledImg);
+        freeSumImage(&scaledSum);
+        freeSumImage(&scaledSqSum);
+
+        // Update scale factor.
+        factor *= scaleFactor;
+    }
+
+    // Optionally, perform grouping of overlapping candidates.
+    if (!allCandidates.empty()) {
+        // groupRectangles modifies the vector in place.
+        groupRectangles(allCandidates, 1, 0.4f);
+    }
+
     printf("-- face detection using CUDA complete --\n");
-    printf("Number of detected faces: %zu\n", result.size());
+    printf("Total number of candidate faces detected: %zu\n", allCandidates.size());
 
     // 6. Draw detected face boxes on the image.
-    for (size_t i = 0; i < result.size(); i++) {
-        drawRectangle(image, result[i]);
+    for (size_t i = 0; i < allCandidates.size(); i++) {
+        drawRectangle(image, allCandidates[i]);
     }
 
     // 7. Save the output image.

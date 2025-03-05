@@ -12,6 +12,8 @@
 #include <string.h>         // For memcpy
 #include <assert.h>         // For device-side assertions
 
+#define DEBUG_CANDIDATE_X 2015
+#define DEBUG_CANDIDATE_Y 863
 
 #define CUDA_CHECK(call) do { \
     cudaError_t err = call; \
@@ -55,6 +57,12 @@ __device__ int int_sqrt_device(int value) {
     return a;
 }
 
+// ---------------------------------------------------------------------
+// Device function: Rounding function mirroring CPU implementation
+__device__ inline int myRound_device(float value) {
+    return (int)(value + (value >= 0 ? 0.5f : -0.5f));
+}
+
 
 // ---------------------------------------------------------------------
 // Device function: Evaluate a weak classifier for candidate window p.
@@ -72,10 +80,15 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int* rect = d_rectangles_array + r_index;
 
     // --- First Rectangle ---
-    int tl1_x = p.x + (int)roundf(rect[0] * scaleFactor);
-    int tl1_y = p.y + (int)roundf(rect[1] * scaleFactor);
-    int br1_x = tl1_x + (int)roundf(rect[2] * scaleFactor);
-    int br1_y = tl1_y + (int)roundf(rect[3] * scaleFactor);
+    int tl1_x = p.x + (int)myRound_device(rect[0] * scaleFactor);
+    int tl1_y = p.y + (int)myRound_device(rect[1] * scaleFactor);
+    int br1_x = tl1_x + (int)myRound_device(rect[2] * scaleFactor);
+    int br1_y = tl1_y + (int)myRound_device(rect[3] * scaleFactor);
+
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
+        haar_counter == 0 && w_index == 0 && r_index == 0) {
+        printf("[Device DEBUG] First rectangle: tl=(%d,%d), br=(%d,%d)\n", tl1_x, tl1_y, br1_x, br1_y);
+    }
 
 
     // Check bounds
@@ -94,11 +107,16 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     sum1 = sum1 * d_weights_array[w_index + 0];
 
     // --- Second Rectangle ---
-    int tl2_x = p.x + (int)roundf(rect[4] * scaleFactor);
-    int tl2_y = p.y + (int)roundf(rect[5] * scaleFactor);
-    int br2_x = tl2_x + (int)roundf(rect[6] * scaleFactor);
-    int br2_y = tl2_y + (int)roundf(rect[7] * scaleFactor);
+    int tl2_x = p.x + (int)myRound_device(rect[4] * scaleFactor);
+    int tl2_y = p.y + (int)myRound_device(rect[5] * scaleFactor);
+    int br2_x = tl2_x + (int)myRound_device(rect[6] * scaleFactor);
+    int br2_y = tl2_y + (int)myRound_device(rect[7] * scaleFactor);
 
+
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
+        haar_counter == 0 && w_index == 0 && r_index == 0) {
+        printf("[Device DEBUG] Second rectangle: tl=(%d,%d), br=(%d,%d)\n", tl2_x, tl2_y, br2_x, br2_y);
+    }
 
     assert(tl2_x >= 0 && tl2_x < d_cascade->sum.width);
     assert(tl2_y >= 0 && tl2_y < d_cascade->sum.height);
@@ -116,13 +134,20 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
 
     int total_sum = sum1 + sum2;
 
+    int sum3 = 0;
+
     // --- Third Rectangle (if present) ---
     if (d_weights_array[w_index + 2] != 0)
     {
-        int tl3_x = p.x + (int)roundf(rect[8] * scaleFactor);
-        int tl3_y = p.y + (int)roundf(rect[9] * scaleFactor);
-        int br3_x = tl3_x + (int)roundf(rect[10] * scaleFactor);
-        int br3_y = tl3_y + (int)roundf(rect[11] * scaleFactor);
+        int tl3_x = p.x + (int)myRound_device(rect[8] * scaleFactor);
+        int tl3_y = p.y + (int)myRound_device(rect[9] * scaleFactor);
+        int br3_x = tl3_x + (int)myRound_device(rect[10] * scaleFactor);
+        int br3_y = tl3_y + (int)myRound_device(rect[11] * scaleFactor);
+
+        if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
+            haar_counter == 0 && w_index == 0 && r_index == 0) {
+            printf("[Device DEBUG] Third rectangle: tl=(%d,%d), br=(%d,%d)\n", tl3_x, tl3_y, br3_x, br3_y);
+        }
 
         assert(tl3_x >= 0 && tl3_x < d_cascade->sum.width);
         assert(tl3_y >= 0 && tl3_y < d_cascade->sum.height);
@@ -133,8 +158,14 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
         int idx_tr3 = tl3_y * d_cascade->sum.width + br3_x;
         int idx_bl3 = br3_y * d_cascade->sum.width + tl3_x;
         int idx_br3 = br3_y * d_cascade->sum.width + br3_x;
-        int sum3 = d_cascade->p0[idx_br3] - d_cascade->p0[idx_tr3] - d_cascade->p0[idx_bl3] + d_cascade->p0[idx_tl3];
+        sum3 = d_cascade->p0[idx_br3] - d_cascade->p0[idx_tr3] - d_cascade->p0[idx_bl3] + d_cascade->p0[idx_tl3];
         total_sum += sum3 * d_weights_array[w_index + 2];
+    }
+
+    // Debug print for a specific candidate at stage 0, feature 0.
+    if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0 && w_index == 0 && r_index == 0) {
+        printf("[Device DEBUG] Candidate (%d,%d), Stage 0, Feature 0: sum1 = %d, sum2 = %d, sum3 = %d, final_sum = %d\n",
+            p.x, p.y, sum1, sum2, sum3, total_sum);
     }
 
 
@@ -155,6 +186,8 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
 
     int p_offset = p.y * d_cascade->sum.width + p.x;
     assert(p_offset < d_cascade->sum.width * d_cascade->sum.height);
+
+
 
     int pq_offset = p.y * d_cascade->sqsum.width + p.x;
     assert(pq_offset < d_cascade->sqsum.width * d_cascade->sqsum.height);
@@ -230,11 +263,11 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
 
     if (result > 0) {
         MyRect r;
-        r.x = (int)roundf(x * scaleFactor);
-        r.y = (int)roundf(y * scaleFactor);
+        r.x = (int)myRound_device(x * scaleFactor);
+        r.y = (int)myRound_device(y * scaleFactor);
 
-        r.width = (int)roundf(d_cascade->orig_window_size.width * scaleFactor);
-        r.height = (int)roundf(d_cascade->orig_window_size.height * scaleFactor);
+        r.width = (int)myRound_device(d_cascade->orig_window_size.width * scaleFactor);
+        r.height = (int)myRound_device(d_cascade->orig_window_size.height * scaleFactor);
         int idx = atomicAdd(d_candidateCount, 1);
         if (idx < maxCandidates) {
             d_candidates[idx] = r;
@@ -324,13 +357,13 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     CUDA_CHECK(cudaMalloc((void**)&d_weights_array_dev, cascade->total_nodes * 3 * sizeof(int)));
     CUDA_CHECK(cudaMemcpy(d_weights_array_dev, cascade->weights_array, cascade->total_nodes * 3 * sizeof(int), cudaMemcpyHostToDevice));
 
-    float* d_alpha1_array_dev = nullptr;
-    CUDA_CHECK(cudaMalloc((void**)&d_alpha1_array_dev, cascade->total_nodes * sizeof(float)));
-    CUDA_CHECK(cudaMemcpy(d_alpha1_array_dev, cascade->alpha1_array, cascade->total_nodes * sizeof(float), cudaMemcpyHostToDevice));
+    int* d_alpha1_array_dev = nullptr;
+    CUDA_CHECK(cudaMalloc((void**)&d_alpha1_array_dev, cascade->total_nodes * sizeof(int)));
+    CUDA_CHECK(cudaMemcpy(d_alpha1_array_dev, cascade->alpha1_array, cascade->total_nodes * sizeof(int), cudaMemcpyHostToDevice));
 
-    float* d_alpha2_array_dev = nullptr;
-    CUDA_CHECK(cudaMalloc((void**)&d_alpha2_array_dev, cascade->total_nodes * sizeof(float)));
-    CUDA_CHECK(cudaMemcpy(d_alpha2_array_dev, cascade->alpha2_array, cascade->total_nodes * sizeof(float), cudaMemcpyHostToDevice));
+    int* d_alpha2_array_dev = nullptr;
+    CUDA_CHECK(cudaMalloc((void**)&d_alpha2_array_dev, cascade->total_nodes * sizeof(int)));
+    CUDA_CHECK(cudaMemcpy(d_alpha2_array_dev, cascade->alpha2_array, cascade->total_nodes * sizeof(int), cudaMemcpyHostToDevice));
 
     int* d_tree_thresh_array_dev = nullptr;
     CUDA_CHECK(cudaMalloc((void**)&d_tree_thresh_array_dev, cascade->total_nodes * sizeof(int)));
@@ -340,8 +373,8 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     CUDA_CHECK(cudaMemcpyToSymbol(d_stages_thresh_array, &d_stages_thresh_array_dev, sizeof(float*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_rectangles_array, &d_rectangles_array_dev, sizeof(int*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_weights_array, &d_weights_array_dev, sizeof(int*)));
-    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha1_array, &d_alpha1_array_dev, sizeof(float*)));
-    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha2_array, &d_alpha2_array_dev, sizeof(float*)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha1_array, &d_alpha1_array_dev, sizeof(int*)));
+    CUDA_CHECK(cudaMemcpyToSymbol(d_alpha2_array, &d_alpha2_array_dev, sizeof(int*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_tree_thresh_array, &d_tree_thresh_array_dev, sizeof(int*)));
     printf("[Host DEBUG] Transferred classifier parameters to device constant memory.\n");
 
@@ -360,9 +393,12 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     int baseWidth = cascade->orig_window_size.width;
     int baseHeight = cascade->orig_window_size.height;
 
+    int detectionWindowWidth = (baseWidth + extra_x) * scaleFactor;
+    int detectionWindowHeight = (baseHeight + extra_y) * scaleFactor;
+
     // Compute maximum valid starting positions for the sliding window.
-    int x_max = d_sum->width - (baseWidth + extra_x);
-    int y_max = d_sum->height - (baseHeight + extra_y);
+    int x_max = d_sum->width - detectionWindowWidth -1;
+    int y_max = d_sum->height - detectionWindowHeight -1;
     if (x_max < 0) x_max = 0;
     if (y_max < 0) y_max = 0;
     printf("[Host DEBUG] Search space dimensions (with extra margins): x_max=%d, y_max=%d\n", x_max, y_max);
