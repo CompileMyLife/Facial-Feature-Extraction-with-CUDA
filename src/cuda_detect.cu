@@ -12,6 +12,9 @@
 #include <string.h>         // For memcpy
 #include <assert.h>         // For device-side assertions
 
+
+//#define FINAL_DEBUG
+
 #define DEBUG_CANDIDATE_X 2015
 #define DEBUG_CANDIDATE_Y 863
 
@@ -105,12 +108,13 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int sum1 = d_cascade->p0[idx_br1] - d_cascade->p0[idx_tr1] - d_cascade->p0[idx_bl1] + d_cascade->p0[idx_tl1];
     sum1 = sum1 * d_weights_array[w_index + 0];
 
-
+#ifdef Final_DEBUG
     // Debug Statement for First Rectangle
     if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0) {
         printf("[Device DEBUG] Rect 1: tl=(%d,%d), br=(%d,%d), sum1=%d, weight=%d\n",
             tl1_x, tl1_y, br1_x, br1_y, sum1, d_weights_array[w_index]);
     }
+#endif
 
     // --- Second Rectangle ---
     int tl2_x = p.x + (int)myRound_device(rect[4]);
@@ -132,11 +136,13 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
     int sum2 = d_cascade->p0[idx_br2] - d_cascade->p0[idx_tr2] - d_cascade->p0[idx_bl2] + d_cascade->p0[idx_tl2];
     sum2 = sum2 * d_weights_array[w_index + 1];
 
+#ifdef Final_DEBUG
     // Debug Statement for Second Rectangle
     if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0) {
         printf("[Device DEBUG] Rect 2: tl=(%d,%d), br=(%d,%d), sum2=%d, weight=%d\n",
             tl2_x, tl2_y, br2_x, br2_y, sum2, d_weights_array[w_index + 1]);
     }
+#endif
 
     int total_sum = sum1 + sum2;
 
@@ -150,10 +156,12 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
         int br3_x = tl3_x + (int)myRound_device(rect[10]);
         int br3_y = tl3_y + (int)myRound_device(rect[11]);
 
+#ifdef Final_DEBUG
         if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y &&
             haar_counter == 0 && w_index == 0 && r_index == 0) {
             printf("[Device DEBUG] Third rectangle: tl=(%d,%d), br=(%d,%d)\n", tl3_x, tl3_y, br3_x, br3_y);
         }
+#endif
 
         assert(tl3_x >= 0 && tl3_x < d_cascade->sum.width);
         assert(tl3_y >= 0 && tl3_y < d_cascade->sum.height);
@@ -168,20 +176,24 @@ __device__ float evalWeakClassifier_device(const myCascade* d_cascade, int varia
         sum3 *= d_weights_array[w_index + 2];
         total_sum += sum3;
 
+#ifdef Final_DEBUG
         // Debug Statement for Third Rectangle (only if it exists)
         if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter == 0) {
             printf("[Device DEBUG] Rect 3: tl=(%d,%d), br=(%d,%d), sum3=%d, weight=%d\n",
                 tl3_x, tl3_y, br3_x, br3_y, sum3, d_weights_array[w_index + 2]);
         }
+#endif
 
     }
     int threshold = d_tree_thresh_array[haar_counter] * (variance_norm_factor);
 
+#ifdef Final_DEBUG
     // Debug only for the specific candidate and first few features
     if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y && haar_counter < 5) {
         printf("[Device DEBUG] Candidate (%d,%d), Feature %d: sum1=%d, sum2=%d, sum3=%d, total_sum=%d, threshold=%d\n",
             p.x, p.y, haar_counter, sum1, sum2, sum3, total_sum, threshold);
     }
+#endif
 
     return (total_sum >= threshold) ? d_alpha2_array[haar_counter] : d_alpha1_array[haar_counter];
 }
@@ -217,7 +229,7 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
     else
         var_norm = 1;
 
-#ifdef FINCAL_DEBUG
+#ifdef FINAL_DEBUG
     // Integral Debugging 
     if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
 		printf("\n--------------------------------------------------\n");
@@ -230,6 +242,7 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
         printf("[Device DEBUG] mean = %u, var_norm = %u\n", mean, var_norm);
         printf("--------------------------------------------------\n\n");
     }
+#endif
 
     int haar_counter = 0;
     int w_index = 0;
@@ -250,11 +263,13 @@ __device__ int runCascadeClassifier_device(MyIntImage* d_sum, MyIntImage* d_sqsu
             r_index += 12;
         }
 
+#ifdef Final_DEBUG
         // Debugging after each stage:
         if (p.x == DEBUG_CANDIDATE_X && p.y == DEBUG_CANDIDATE_Y) {
             printf("[Device DEBUG] Stage %d complete: stage_sum = %f, threshold = %f\n",
                 i, stage_sum, 0.4f * d_stages_thresh_array[i]);
         }
+#endif
 
         if (stage_sum < 0.4 * d_stages_thresh_array[i])
             return -i;
@@ -278,10 +293,12 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int current_count = atomicAdd(&d_debug_print_count, 1);
 
+#ifdef Final_DEBUG
     if (current_count < 10) {
         printf("[GPU Debug: detectKernel] x=%d, y=%d, x_max=%d, y_max=%d)\n",
             x, y, x_max, y_max);
     }
+#endif
 
     // Debug: For the first thread in each block, print x and y
     if (threadIdx.x == 0 && threadIdx.y == 0) {
@@ -292,6 +309,7 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
     // Check the bounds unconditionally for a few threads
     if (x >= x_max || y >= y_max) {
         
+#ifdef Final_DEBUG
         // debug print: iterations 4,5,6, limited to first 10 prints
         if (1) {
             // Atomically increment global print count and check limi
@@ -300,30 +318,39 @@ __global__ void detectKernel(MyIntImage* d_sum, MyIntImage* d_sqsum,
                     x, y, x_max, y_max);
             }
         }
+#endif
         return;
     }
     
+#ifdef Final_DEBUG
     if (current_count == 2) {
         printf("\nMADE IT PAST if (x >= x_max || y >= y_max)\n");
     }
+#endif
 
     MyPoint p;
     p.x = x;
     p.y = y;
 
+#ifdef Final_DEBUG
     if (current_count == 2) {
         printf("\nMADE IT PAST p.x and p.y assignments\n");
     }
+#endif
 
     int result = runCascadeClassifier_device(d_sum, d_sqsum, d_cascade, p, 0, scaleFactor);
 
+#ifdef Final_DEBUG
     if (current_count == 2) {
         printf("\nMADE IT PAST p.x and p.y runCascadeClassifier_device. \n RESULT: %d\n\n", result);
     }
+#endif
 
+#ifdef Final_DEBUG
     if (result > 0) {
         printf("\nResult positiive!\n RESULT: %d\n\n", result);
     }
+#endif
 
     if (result > 0) {
         MyRect r;
@@ -393,6 +420,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     d_cascade->pq2 = d_cascade->sqsum.data + d_cascade->sqsum.width * (winH - 1);
     d_cascade->pq3 = d_cascade->sqsum.data + d_cascade->sqsum.width * (winH - 1) + (winW - 1);
 
+#ifdef Final_DEBUG
     printf("Cascade corner pointers:\n");
     printf(" p0 = %p\n", (void*)d_cascade->p0);
     printf(" p1 = %p (offset: %td)\n", (void*)d_cascade->p1, d_cascade->p1 - d_cascade->sum.data);
@@ -402,6 +430,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     printf(" pq1 = %p (offset: %td)\n", (void*)d_cascade->pq1, d_cascade->pq1 - d_cascade->sqsum.data);
     printf(" pq2 = %p (offset: %td)\n", (void*)d_cascade->pq2, d_cascade->pq2 - d_cascade->sqsum.data);
     printf(" pq3 = %p (offset: %td)\n", (void*)d_cascade->pq3, d_cascade->pq3 - d_cascade->sqsum.data);
+#endif
 
     // --- Step 5: Transfer classifier parameters to device constant memory ---
     // (Allocate device memory for the classifier arrays and copy them from host.)
@@ -440,7 +469,10 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     CUDA_CHECK(cudaMemcpyToSymbol(d_alpha1_array, &d_alpha1_array_dev, sizeof(int*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_alpha2_array, &d_alpha2_array_dev, sizeof(int*)));
     CUDA_CHECK(cudaMemcpyToSymbol(d_tree_thresh_array, &d_tree_thresh_array_dev, sizeof(int*)));
+
+#ifdef Final_DEBUG
     printf("[Host DEBUG] Transferred classifier parameters to device constant memory.\n");
+#endif
 
     // --- Step 6: Allocate Unified Memory for detection results ---
     MyRect* d_candidates = nullptr;
@@ -448,8 +480,11 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     int* d_candidateCount = nullptr;
     CUDA_CHECK(cudaMallocManaged((void**)&d_candidateCount, sizeof(int)));
     *d_candidateCount = 0;
+
+#ifdef Final_DEBUG
     printf("[Host DEBUG] d_candidates allocated at %p, d_candidateCount allocated at %p, initial candidate count = %d\n",
         (void*)d_candidates, (void*)d_candidateCount, *d_candidateCount);
+#endif
 
     // --- Step 7: Determine search space dimensions and launch the detection kernel ---
     // Use extra_x and extra_y only to clip the search space so that the sliding window remains in bounds.
@@ -462,21 +497,30 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     int y_max = d_sum->height - baseHeight;
     if (x_max < 0) x_max = 0;
     if (y_max < 0) y_max = 0;
+
+#ifdef Final_DEBUG
     printf("[Host DEBUG] Search space dimensions (with extra margins): x_max=%d, y_max=%d\n", x_max, y_max);
+#endif
 
     dim3 blockDim(16, 16);
     dim3 gridDim((x_max + blockDim.x - 1) / blockDim.x,
         (y_max + blockDim.y - 1) / blockDim.y);
+
+#ifdef Final_DEBUG
     printf("[Host] Launching kernel with gridDim=(%d, %d), blockDim=(%d, %d)\n",
         gridDim.x, gridDim.y, blockDim.x, blockDim.y);
+#endif
 
+#ifdef Final_DEBUG
     printf("\nDetection window: %d x %d, x_max=%d, y_max=%d\n",
         baseWidth, baseHeight, x_max, y_max);
+#endif
 
 
     // Launch the kernel with the original base window size for classification.
     CUDA_CHECK(cudaDeviceSynchronize());
 
+#ifdef Final_DEBUG
     printf("\n-------------------------------------------------------------------------------\n");
     printf("[Kernel Launch Debug] scaleFactor = %.3f, x_max = %d, y_max = %d, maxCandidates = %d\n",
         scaleFactor, x_max, y_max, maxCandidates);
@@ -485,6 +529,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     printf("[Kernel Launch Debug] gridDim = (%d, %d), blockDim = (%d, %d)\n",
         gridDim.x, gridDim.y, blockDim.x, blockDim.y);
     printf("\n-------------------------------------------------------------------------------\n");
+#endif
 
     int zero = 0;
     CUDA_CHECK(cudaMemcpyToSymbol(d_debug_print_count, &zero, sizeof(int)));

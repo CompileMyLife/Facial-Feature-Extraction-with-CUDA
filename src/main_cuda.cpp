@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <vector>
 
+//#define FINAL_DEBUG
+
 extern int iter_counter;
 inline int myRound(float value);  // Prototype for the inline function.
 void ScaleImage_Invoker(myCascade* _cascade, float _factor, int sum_row, int sum_col, std::vector<MyRect>& _vec);
@@ -44,21 +46,28 @@ void debugPrintIntegralImageGPU(MyIntImage* img, int numSamples) {
     int width = img->width;
     int height = img->height;
     int total = width * height;
-    printf("GPU Integral image summary: width = %d, height = %d, total values = %d\n", width, height, total);
 
+#ifdef Final_DEBUG
+    printf("GPU Integral image summary: width = %d, height = %d, total values = %d\n", width, height, total);
+#endif
+
+#ifdef Final_DEBUG
     // Print the four corner values
     printf("Top-left (index 0): %d\n", img->data[0]);
     printf("Top-right (index %d): %d\n", width - 1, img->data[width - 1]);
     printf("Bottom-left (index %d): %d\n", (height - 1) * width, img->data[(height - 1) * width]);
     printf("Bottom-right (index %d): %d\n", total - 1, img->data[total - 1]);
+#endif
 
     int step = total / numSamples;
     if (step < 1)
         step = 1;
+#ifdef Final_DEBUG
     printf("Printing %d sample values (every %d-th value):\n", numSamples, step);
     for (int i = 0; i < total; i += step) {
         printf("Index %d: %d\n", i, img->data[i]);
     }
+#endif
 }
 
 

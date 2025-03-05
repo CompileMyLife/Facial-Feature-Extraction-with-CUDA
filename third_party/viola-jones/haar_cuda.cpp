@@ -38,6 +38,7 @@
 #include <cmath>
 
 #define DEBUG_PRINT 1
+///#define FINAL_DEBUG
 
 /* TODO: use matrices */
 /* classifier parameters */
@@ -205,8 +206,10 @@ std::vector<MyRect> detectObjects( MyImage* _img, MySize minSize, MySize maxSize
        *************************************************/
       setImageForCascadeClassifier( cascade, sum1, sqsum1);
 
+#ifdef FINAL_DEBUG
       /* print out for each scale of the image pyramid */
       printf("detecting faces, iter := %d\n", iter_counter);
+#endif
 
       /****************************************************
        * Process the current scale with the cascaded fitler.
@@ -269,7 +272,10 @@ unsigned int int_sqrt (unsigned int value)
 
 void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntImage* _sqsum)
 {
+
+#ifdef FINAL_DEBUG
     printf("\n-- Entering setImageForCascadeClassifier --\n");
+#endif
 
     MyIntImage* sum = _sum;
     MyIntImage* sqsum = _sqsum;
@@ -289,9 +295,11 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
     equRect.width = cascade->orig_window_size.width;
     equRect.height = cascade->orig_window_size.height;
 
+#ifdef FINAL_DEBUG
     // Print the original window size.
     printf("DEBUG: cascade->orig_window_size.width = %d, cascade->orig_window_size.height = %d\n",
         cascade->orig_window_size.width, cascade->orig_window_size.height);
+#endif
 
     // Check for zero dimensions.
     if (equRect.width == 0 || equRect.height == 0)
@@ -300,15 +308,26 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
     }
 
     int window_area = equRect.width * equRect.height;
-    printf("DEBUG: Calculated window area = %d\n", window_area);
 
+#ifdef FINAL_DEBUG
+    printf("DEBUG: Calculated window area = %d\n", window_area);
+#endif
+
+#ifdef FINAL_DEBUG
     printf("\n-- Calculating inverse window area --\n");
+#endif
     // Assuming cascade->inv_window_area is a float.
     cascade->inv_window_area = 1.0f / window_area;
     // Cast to double when printing with %f (printf promotes float to double anyway)
-    printf("DEBUG: cascade->inv_window_area = %f\n", (double)cascade->inv_window_area);
 
+#ifdef FINAL_DEBUG
+    printf("DEBUG: cascade->inv_window_area = %f\n", (double)cascade->inv_window_area);
+#endif
+
+#ifdef FINAL_DEBUG
     printf("\n-- Setting integral image corner pointers in cascade --\n");
+#endif
+
     cascade->p0 = sum->data;                                          // Top-left
     cascade->p1 = sum->data + equRect.width - 1;                        // Top-right
     cascade->p2 = sum->data + sum->width * (equRect.height - 1);          // Bottom-left
@@ -323,7 +342,10 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
      * Process the classifier parameters
      * for each stage and feature.
      ****************************************/
+#ifdef FINAL_DEBUG
     printf("\n-- Starting stage loop in setImageForCascadeClassifier --\n");
+#endif
+
     for (i = 0; i < cascade->n_stages; i++)
     {
         //printf("  -- Stage: %d --\n", i);
@@ -386,7 +408,9 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
         }
         //printf("  -- Finished stage %d --\n", i);
     }
+#ifdef FINAL_DEBUG
     printf("\n-- Exiting setImageForCascadeClassifier --\n");
+#endif
 }
 
 
@@ -676,11 +700,16 @@ void nearestNeighbor(MyImage* src, MyImage* dst) {
     int w2 = dst->width;
     int h2 = dst->height;
 
+#ifdef FINAL_DEBUG
     printf("In nearestNeighbor: src->data = %p, dst->data = %p, w1=%d, h1=%d, w2=%d, h2=%d\n",
         src->data, dst->data, w1, h1, w2, h2);
+#endif
+
 
     if (w2 <= 0 || h2 <= 0) {
+#ifdef FINAL_DEBUG
         printf("Destination dimensions invalid: w2=%d, h2=%d\n", w2, h2);
+#endif
         return;
     }
 
@@ -694,7 +723,9 @@ void nearestNeighbor(MyImage* src, MyImage* dst) {
         t = dst_data + i * w2;
         y = ((i * y_ratio) >> 16);
         if (y < 0 || y >= h1) {
+#ifdef FINAL_DEBUG
             printf("Invalid y = %d at iteration i=%d\n", y, i);
+#endif
             y = (y < 0) ? 0 : h1 - 1;
         }
         p = src_data + y * w1;
@@ -724,13 +755,20 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
     int tree_index = 0;
     FILE* finfo = fopen("info.txt", "rb");
 
-    printf("\n-- Entering readTextClassifier --\n"); // Added print
+#ifdef FINAL_DEBUG
+    printf("\n-- Entering readTextClassifier --\n"); 
+#endif
+
 
     if (finfo == NULL) { // Check if file opened successfully
+#ifdef FINAL_DEBUG
         printf("Error opening info.txt!\n");
+#endif
         return; // Exit if file not opened
     }
+#ifdef FINAL_DEBUG
     printf("Successfully opened info.txt\n"); // Added print
+#endif
 
     /**************************************************
     * how many stages are in the cascaded filter?
@@ -740,10 +778,14 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
     if (fgets(mystring, 12, finfo) != NULL)
     {
         stages = atoi(mystring);
+#ifdef FINAL_DEBUG
         printf("Number of stages read: %d\n", stages); // Added print
+#endif
     }
     else {
+#ifdef FINAL_DEBUG
         printf("Error reading number of stages from info.txt!\n");
+#endif
         fclose(finfo);
         return;
     }
@@ -759,16 +801,22 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
      * starting from second line.
      * (in the 5kk73 example, from line 2 to line 26)
      *************************************************/
+#ifdef FINAL_DEBUG
     printf("\n-- Reading stages array from info.txt --\n"); // Added print
+#endif
     while (fgets(mystring, 12, finfo) != NULL)
     {
         stages_array[i] = atoi(mystring);
+#ifdef FINAL_DEBUG
         printf("Stage %d filters: %d\n", i, stages_array[i]); // Added print
+#endif
         total_nodes += stages_array[i];
         i++;
     }
     fclose(finfo);
-    printf("\n-- Finished reading stages array from info.txt --\n"); // Added print
+#ifdef FINAL_DEBUG
+    printf("\n-- Finished reading stages array from info.txt --\n");
+#endif
 
 
     /* TODO: use matrices where appropriate */
@@ -801,12 +849,19 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
 
     FILE* fp = fopen("class.txt", "rb");
     if (fp == NULL) { // Check if file opened successfully
+
+#ifdef FINAL_DEBUG
         printf("Error opening class.txt!\n");
+#endif
         return; // Exit if file not opened
     }
+#ifdef FINAL_DEBUG
     printf("Successfully opened class.txt\n"); // Added print
+#endif
 
+#ifdef FINAL_DEBUG
     printf("\n-- Reading classifier parameters from class.txt --\n"); // Added print
+#endif
 
     /******************************************
      * Read the filter parameters in class.txt
@@ -827,7 +882,9 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
                         //printf("rectangles_array[%d] = %d\n", r_index, rectangles_array[r_index]); // Added print
                     }
                     else {
+#ifdef FINAL_DEBUG
                         printf("Error reading rectangles_array at index %d from class.txt!\n", r_index);
+#endif
                         fclose(fp);
                         return;
                     }
@@ -842,7 +899,9 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
                     /*weights_array[w_index]>>=8; */
                 }
                 else {
+#ifdef FINAL_DEBUG
                     printf("Error reading weights_array at index %d from class.txt!\n", w_index);
+#endif
                     fclose(fp);
                     return;
                 }
@@ -891,8 +950,11 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
         } /* end of j loop */
     } /* end of i loop */
     fclose(fp);
+
+#ifdef FINAL_DEBUG
     printf("\n-- Finished reading classifier parameters from class.txt --\n"); // Added print
     printf("\n-- Exiting readTextClassifier --\n"); // Added print
+#endif
 }
 
 
