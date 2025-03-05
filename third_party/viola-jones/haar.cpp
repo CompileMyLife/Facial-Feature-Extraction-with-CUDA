@@ -269,7 +269,7 @@ unsigned int int_sqrt (unsigned int value)
 
 void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntImage* _sqsum)
 {
-    printf("-- Entering setImageForCascadeClassifier --\n");
+    printf("\n-- Entering setImageForCascadeClassifier --\n");
 
     MyIntImage* sum = _sum;
     MyIntImage* sqsum = _sqsum;
@@ -302,13 +302,13 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
     int window_area = equRect.width * equRect.height;
     printf("DEBUG: Calculated window area = %d\n", window_area);
 
-    printf("-- Calculating inverse window area --\n");
+    printf("\n-- Calculating inverse window area --\n");
     // Assuming cascade->inv_window_area is a float.
     cascade->inv_window_area = 1.0f / window_area;
     // Cast to double when printing with %f (printf promotes float to double anyway)
     printf("DEBUG: cascade->inv_window_area = %f\n", (double)cascade->inv_window_area);
 
-    printf("-- Setting integral image corner pointers in cascade --\n");
+    printf("\n-- Setting integral image corner pointers in cascade --\n");
     cascade->p0 = sum->data;                                          // Top-left
     cascade->p1 = sum->data + equRect.width - 1;                        // Top-right
     cascade->p2 = sum->data + sum->width * (equRect.height - 1);          // Bottom-left
@@ -323,10 +323,10 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
      * Process the classifier parameters
      * for each stage and feature.
      ****************************************/
-    printf("-- Starting stage loop in setImageForCascadeClassifier --\n");
+    printf("\n-- Starting stage loop in setImageForCascadeClassifier --\n");
     for (i = 0; i < cascade->n_stages; i++)
     {
-        printf("  -- Stage: %d --\n", i);
+        //printf("  -- Stage: %d --\n", i);
         for (j = 0; j < cascade->stages_array[i]; j++)
         {
             //printf("    -- Feature: %d --\n", j);
@@ -384,9 +384,9 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
             r_index += 12;  // 3 rectangles × 4 parameters each
             w_index += 3;   // 3 weights per feature
         }
-        printf("  -- Finished stage %d --\n", i);
+        //printf("  -- Finished stage %d --\n", i);
     }
-    printf("-- Exiting setImageForCascadeClassifier --\n");
+    printf("\n-- Exiting setImageForCascadeClassifier --\n");
 }
 
 
@@ -718,7 +718,7 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
     int tree_index = 0;
     FILE* finfo = fopen("info.txt", "rb");
 
-    printf("-- Entering readTextClassifier --\n"); // Added print
+    printf("\n-- Entering readTextClassifier --\n"); // Added print
 
     if (finfo == NULL) { // Check if file opened successfully
         printf("Error opening info.txt!\n");
@@ -753,7 +753,7 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
      * starting from second line.
      * (in the 5kk73 example, from line 2 to line 26)
      *************************************************/
-    printf("-- Reading stages array from info.txt --\n"); // Added print
+    printf("\n-- Reading stages array from info.txt --\n"); // Added print
     while (fgets(mystring, 12, finfo) != NULL)
     {
         stages_array[i] = atoi(mystring);
@@ -762,7 +762,7 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
         i++;
     }
     fclose(finfo);
-    printf("-- Finished reading stages array from info.txt --\n"); // Added print
+    printf("\n-- Finished reading stages array from info.txt --\n"); // Added print
 
 
     /* TODO: use matrices where appropriate */
@@ -800,7 +800,7 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
     }
     printf("Successfully opened class.txt\n"); // Added print
 
-    printf("-- Reading classifier parameters from class.txt --\n"); // Added print
+    printf("\n-- Reading classifier parameters from class.txt --\n"); // Added print
 
     /******************************************
      * Read the filter parameters in class.txt
@@ -885,8 +885,8 @@ void readTextClassifier(myCascade* cascade) // Modified function to accept myCas
         } /* end of j loop */
     } /* end of i loop */
     fclose(fp);
-    printf("-- Finished reading classifier parameters from class.txt --\n"); // Added print
-    printf("-- Exiting readTextClassifier --\n"); // Added print
+    printf("\n-- Finished reading classifier parameters from class.txt --\n"); // Added print
+    printf("\n-- Exiting readTextClassifier --\n"); // Added print
 }
 
 

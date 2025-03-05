@@ -69,6 +69,9 @@ void ScaleImage_Invoker( myCascade* _cascade, float _factor, int sum_row, int su
 /* compute scaled image */
 void nearestNeighbor (MyImage *src, MyImage *dst);
 
+/* debug print function */
+void debugPrintIntegralImageCPU(MyIntImage *img, int numSamples);
+
 /* rounding function */
 inline  int  myRound( float value )
 {
@@ -187,6 +190,13 @@ std::vector<MyRect> detectObjects( MyImage* _img, MySize minSize, MySize maxSize
        ***************************************************/
       integralImages(img1, sum1, sqsum1);
 
+      // For debugging: print a summary of the computed integral image.
+
+      if (iter_counter == 2) {
+      printf("DEBUG: Scale iteration %d, factor = %.3f\n", iter_counter, factor);
+      debugPrintIntegralImageCPU(sum1, 10);
+      }
+
       /* sets images for haar classifier cascade */
       /**************************************************
        * Note:
@@ -259,6 +269,28 @@ unsigned int int_sqrt (unsigned int value)
 	}
     }
   return a;
+}
+
+void debugPrintIntegralImageCPU(MyIntImage *img, int numSamples) {
+  int width = img->width;
+  int height = img->height;
+  int total = width * height;
+  printf("Integral image summary: width = %d, height = %d, total values = %d\n", width, height, total);
+  
+  // Print the four corner values
+  printf("Top-left (index 0): %d\n", img->data[0]);
+  printf("Top-right (index %d): %d\n", width - 1, img->data[width - 1]);
+  printf("Bottom-left (index %d): %d\n", (height - 1) * width, img->data[(height - 1) * width]);
+  printf("Bottom-right (index %d): %d\n", total - 1, img->data[total - 1]);
+  
+  // Print an evenly spaced subset of values.
+  int step = total / numSamples;
+  if (step < 1)
+      step = 1;
+  printf("Printing %d sample values (every %d-th value):\n", numSamples, step);
+  for (int i = 0; i < total; i += step) {
+      printf("Index %d: %d\n", i, img->data[i]);
+  }
 }
 
 
