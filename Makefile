@@ -1,13 +1,13 @@
 # C++ Compiler and Flags
 CC      := g++
-CFLAGS  := -std=c++14 -Wall -g
+CFLAGS  := -std=c++14 -Wall
 
 # CUDA Compiler and Flags
 # Google Colab offers T4 GPUs which are the sm_75 compute capability. Since we had a
 # a GPU on hand with sm_86 compute capability, we prioritized that if it exists
 NCC     := nvcc
 NLIB    := /usr/local/cuda/lib64
-NFLAGS  := -std=c++14 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_75,code=sm_75 -g -G -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
+NFLAGS  := -std=c++14 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_75,code=sm_75 -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
 
 # Directories
 SRC_DIR := ./src
@@ -31,10 +31,10 @@ OBJS    := $(OBJS_C) $(OBJS_CPP) $(OBJS_CU)
 default: build
 
 build: main.cpp $(OBJS)
-	$(NCC) $(NFLAGS) -I $(INC_DIR) $^ -o facial_extract
+	$(NCC) $(NFLAGS) -I $(INC_DIR) -I $(NLIB) $^ -o facial_extract
 
 $(SRC_DIR)/%.o: $(SRC_DIR)/%.cu $(INC_DIR)/%.cuh
-	$(NCC) $(NFLAGS) -I $(INC_DIR) -c $< -o $@
+	$(NCC) $(NFLAGS) -I $(INC_DIR) -I $(NLIB) -c $< -o $@
 
 $(SRC_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/%.h
 	$(CC) $(CFLAGS) -I $(INC_DIR) -c $< -o $@
