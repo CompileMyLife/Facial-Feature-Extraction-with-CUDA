@@ -20,3 +20,7 @@
 217	344	7629206515158236	FacialFeatureExtractionWithCUDA.exe	938801903c622f7c
 23	211	7629206583124541	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/third_party/viola-jones/haar_cuda.cpp.obj	6cd2d417c9e85cb6
 212	342	7629206585015139	FacialFeatureExtractionWithCUDA.exe	938801903c622f7c
+8	2921	7630211267906671	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/cuda_detect.cu.obj	d4b3c0cc8986832b
+2922	3094	7630211297041302	FacialFeatureExtractionWithCUDA.exe	938801903c622f7c
+8	239	7630212766924729	CMakeFiles/FacialFeatureExtractionWithCUDA.dir/src/main_cuda.cpp.obj	c208feba1035d4d
+240	375	7630212769236880	FacialFeatureExtractionWithCUDA.exe	938801903c622f7c

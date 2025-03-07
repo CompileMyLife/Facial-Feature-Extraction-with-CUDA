@@ -536,9 +536,9 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
 
     detectKernel << <gridDim, blockDim >> > (d_sum, d_sqsum, d_cascade, scaleFactor, x_max, y_max, d_candidates, d_candidateCount, maxCandidates);
     CUDA_CHECK(cudaGetLastError());
-    printf("[Host DEBUG] Kernel launched.\n");
+    //printf("[Host DEBUG] Kernel launched.\n");
     CUDA_CHECK(cudaDeviceSynchronize());
-    printf("[Host DEBUG] Kernel execution completed.\n");
+    //printf("[Host DEBUG] Kernel execution completed.\n");
 
     int hostCandidateCount = 0;
     CUDA_CHECK(cudaMemcpy(&hostCandidateCount, d_candidateCount, sizeof(int), cudaMemcpyDeviceToHost));
@@ -547,7 +547,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
         candidates.push_back(d_candidates[i]);
     }
 
-    printf("[Host DEBUG] Cleaning up Unified Memory and device memory allocated with cudaMalloc.\n");
+    //printf("[Host DEBUG] Cleaning up Unified Memory and device memory allocated with cudaMalloc.\n");
     cudaFree(d_candidates);
     cudaFree(d_candidateCount);
     cudaFree(d_cascade);
@@ -563,7 +563,7 @@ std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
     cudaFree(d_alpha2_array_dev);
     cudaFree(d_tree_thresh_array_dev);
 
-    printf("[Host] runDetection() completed.\n");
+    //printf("[Host] runDetection() completed.\n");
     return candidates;
 }
 

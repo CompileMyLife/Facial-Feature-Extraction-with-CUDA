@@ -193,7 +193,7 @@ int main() {
             allGpuCandidates.insert(allGpuCandidates.end(), gpuCandidates.begin(), gpuCandidates.end());
         }
         else {
-            printf("Scale factor %f too high for valid detection window at this iteration.\n", factor);
+            //printf("Scale factor %f too high for valid detection window at this iteration.\n", factor);
         }
         factor *= 1.2f;
     }
