@@ -157,6 +157,8 @@ int main() {
     std::vector<MyRect> allGpuCandidates;
     int iter_counter = 1;
     factor = 1.0f;
+
+    // START TIMER
     while (true) {
         int newWidth = (int)(image->width / factor);
         int newHeight = (int)(image->height / factor);
@@ -197,6 +199,7 @@ int main() {
         }
         factor *= 1.2f;
     }
+
 
     printf("CUDA detection detected %zu candidates.\n", allGpuCandidates.size());
     for (size_t i = 0; i < allGpuCandidates.size(); i++) {

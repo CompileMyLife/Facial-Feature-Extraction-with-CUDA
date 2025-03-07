@@ -101,7 +101,9 @@ int main (int argc, char *argv[])
 
 	printf("-- detecting faces --\r\n");
 
+	// START TIMER
 	result = detectObjects(image, minSize, maxSize, cascade, scaleFactor, minNeighbours);
+	// END TIMER
 
 	for(i = 0; i < result.size(); i++ )
 	{
