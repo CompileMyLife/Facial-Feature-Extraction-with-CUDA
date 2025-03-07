@@ -117,7 +117,6 @@ int readPgm(char *fileName, MyImage *image)
 	FILE *in_file;
 	char ch;
 	int type;
-	char version[3];
 	char line[100];
 	char mystring [20];
 	char *pch;

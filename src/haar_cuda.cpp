@@ -47,15 +47,6 @@
  * these monolithic arrays may
  * need to be splitted or duplicated
  ***********************************/
-static int *stages_array;
-static int *rectangles_array;
-static int *weights_array;
-static int *alpha1_array;
-static int *alpha2_array;
-static int *tree_thresh_array;
-static int *stages_thresh_array;
-static int **scaled_rectangles_array;
-
 
 int clock_counter = 0;
 float n_features = 0;
