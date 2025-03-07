@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "haar.h"
-#include "image.h"
+#include "haar_cuda.h"
+#include "image_cuda.h"
 
 #ifdef __cplusplus
 #include <vector>

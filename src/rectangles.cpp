@@ -1,4 +1,4 @@
-#include "haar.h"
+#include "haar_cuda.h"
 
 int myMax(int a, int b)
 {

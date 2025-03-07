@@ -1,17 +1,19 @@
+# C++ Compiler and Flags
 CC      := g++
-# Compiler flags for NVCC: C++14, debugging symbols (-g -G), and exception handling with deprecation suppression.
 CFLAGS  := -std=c++14 -Wall -g
 
 # CUDA Compiler and Flags
+# Google Colab offers T4 GPUs which are the sm_75 compute capability. Since we had a
+# a GPU on hand with sm_86 compute capability, we prioritized that if it exists
 NCC     := nvcc
 NLIB    := /usr/local/cuda/lib64
-#NFLAGS  := -std=c++14 -arch=sm_75 -g -G # T4 GPU available on Google Colab
-NFLAGS  := -std=c++14 -gencode arch=compute_89,code=sm_89 -gencode arch=compute_75,code=sm_75 -g -G -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
+NFLAGS  := -std=c++14 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_75,code=sm_75 -g -G -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
 
 # Directories
 SRC_DIR := ./src
 INC_DIR := ./include
 
+# Gather source files and convert to object files list
 SRCS_C   := $(wildcard $(SRC_DIR)/*.c)
 OBJS_C   := $(subst .c,.o, $(SRCS_C))
 
@@ -23,7 +25,7 @@ OBJS_CU := $(subst .cu,.o, $(SRCS_CU))
 
 OBJS    := $(OBJS_C) $(OBJS_CPP) $(OBJS_CU)
 
-# Not associated with files
+# Don't allow files in directory to be names clean or default or build
 .PHONY: clean default build
 
 default: build

@@ -1,8 +1,8 @@
 #ifndef CUDA_DETECT_H
 #define CUDA_DETECT_H
 
-#include "haar.h"
-#include "image.h"
+#include "haar_cuda.h"
+#include "image_cuda.h"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <string.h>
@@ -21,7 +21,13 @@
 //   cascade     - pointer to the host cascade classifier (after setImageForCascadeClassifier)
 //   maxCandidates - maximum number of candidate detections allocated on the device
 //   scaleFactor - current scale factor (e.g., 1.0f)
-std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum, myCascade* cascade, int maxCandidates, float scaleFactor);
+std::vector<MyRect> runDetection(MyIntImage* h_sum, MyIntImage* h_sqsum,
+        myCascade* cascade,
+        int maxCandidates, 
+        float scaleFactor,
+        int extra_x,
+        int extra_y,
+        int iter_counter);
 #endif // __cplusplus
 
 #endif // CUDA_DETECT_H

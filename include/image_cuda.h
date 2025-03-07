@@ -31,8 +31,8 @@
  * what you give them.   Happy coding!
  */
 
-#ifndef __IMAGE_H__
-#define __IMAGE_H__
+#ifndef __IMAGE_CUDA_H__
+#define __IMAGE_CUDA_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +49,7 @@ typedef struct
 	int maxgrey;
 	unsigned char* data;
 	int flag;
+	int allocatedSize;	// track allocated buffer size
 }
 MyImage;
 

@@ -31,14 +31,13 @@
  * what you give them.   Happy coding!
  */
 
-#ifndef __HAAR_H__
-#define __HAAR_H__
+#ifndef __HAAR_CUDA_H__
+#define __HAAR_CUDA_H__
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "image.h"
+#include "image_cuda.h"
 #include "rectangles.h"
-//#include "stdio-wrapper.h"
 
 #ifdef __cplusplus
 #include <vector>
@@ -70,7 +69,7 @@ extern "C" {
         int total_nodes;
         float scale;
         MySize orig_window_size;
-        int inv_window_area;
+        float inv_window_area;
         MyIntImage sum;
         MyIntImage sqsum;
         sqsumtype* pq0, * pq1, * pq2, * pq3;
@@ -100,7 +99,7 @@ extern "C" {
     void readTextClassifier(myCascade* cascade);
 
     /* Releases classifier resources */
-    void releaseTextClassifier();
+    void releaseTextClassifier(myCascade* cascade);
 
     /* Computes integral images (and squared integral images) from a source image */
     void integralImages(MyImage* src, MyIntImage* sum, MyIntImage* sqsum);
@@ -116,4 +115,4 @@ std::vector<MyRect> detectObjects(MyImage* image, MySize minSize, MySize maxSize
     myCascade* cascade, float scale_factor, int min_neighbors);
 #endif
 
-#endif // __HAAR_H__
+#endif // __HAAR_CUDA_H__

@@ -34,8 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "image.h"
-//#include "stdio-wrapper.h"
+#include "image_cuda.h"
 
 char* strrev(char* str)
 {
