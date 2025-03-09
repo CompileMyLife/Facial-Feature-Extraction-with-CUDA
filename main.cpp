@@ -1,10 +1,14 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <string.h>
+#include <unistd.h>
+#include <vector>
+#include <cuda_runtime.h>
+
 #include "image_cuda.h"
 #include "haar_cuda.h"
 #include "cuda_detect.cuh"  // runDetection is declared here.
-#include <cuda_runtime.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <vector>
 
 //#define FINAL_DEBUG
 
@@ -12,65 +16,47 @@ extern int iter_counter;
 inline int myRound(float value);  // Prototype for the inline function.
 void ScaleImage_Invoker(myCascade* _cascade, float _factor, int sum_row, int sum_col, std::vector<MyRect>& _vec);
 
-
-#define INPUT_FILENAME "Face.pgm"
-#define OUTPUT_FILENAME "Output.pgm"
-
 extern void nearestNeighbor(MyImage* src, MyImage* dst);
 
 // Helper function to scan classifier data and compute the extra offsets (in x and y)
 // that account for all rectangle extents beyond the base detection window.
-void computeExtraOffsets(const myCascade* cascade, int* extra_x, int* extra_y) {
-    *extra_x = 0;
-    *extra_y = 0;
-    int totalRectElems = cascade->total_nodes * 12;
-    for (int i = 0; i < totalRectElems; i += 4) {
-        int rx = cascade->rectangles_array[i];
-        int ry = cascade->rectangles_array[i + 1];
-        int rw = cascade->rectangles_array[i + 2];
-        int rh = cascade->rectangles_array[i + 3];
-        if (rx == 0 && ry == 0 && rw == 0 && rh == 0)
-            continue;
-        int current_right = rx + rw;
-        int current_bottom = ry + rh;
-        if (current_right > *extra_x)
-            *extra_x = current_right;
-        if (current_bottom > *extra_y)
-            *extra_y = current_bottom;
-    }
-}
+void computeExtraOffsets(const myCascade* cascade, int* extra_x, int* extra_y);
 
 // Helper function to print a subset of values from an integral image.
-void debugPrintIntegralImageGPU(MyIntImage* img, int numSamples) {
-    int width = img->width;
-    int height = img->height;
-    int total = width * height;
+void debugPrintIntegralImageGPU(MyIntImage* img, int numSamples);
 
-#ifdef FINAL_DEBUG
-    printf("GPU Integral image summary: width = %d, height = %d, total values = %d\n", width, height, total);
-#endif
+int main(int argc, char** argv) {
+    int opt;
 
-#ifdef FINAL_DEBUG
-    // Print the four corner values
-    printf("Top-left (index 0): %d\n", img->data[0]);
-    printf("Top-right (index %d): %d\n", width - 1, img->data[width - 1]);
-    printf("Bottom-left (index %d): %d\n", (height - 1) * width, img->data[(height - 1) * width]);
-    printf("Bottom-right (index %d): %d\n", total - 1, img->data[total - 1]);
-#endif
+    char* input_file_path = NULL;
+    char* output_file_path = NULL;
 
-    int step = total / numSamples;
-    if (step < 1)
-        step = 1;
-#ifdef FINAL_DEBUG
-    printf("Printing %d sample values (every %d-th value):\n", numSamples, step);
-    for (int i = 0; i < total; i += step) {
-        printf("Index %d: %d\n", i, img->data[i]);
-    }
-#endif
-}
-
-int main() {
     printf("-- entering main function --\n");
+
+    while((opt = getopt(argc, argv, "i:o:")) != -1) {
+        switch(opt) {
+            // Input Image
+            case 'i':
+                // Check that the path doesn't exist
+                if (access(optarg, F_OK) != 0) {
+                    fprintf(stderr, "ERROR: path to file %s does not exist\n", optarg);
+                    fprintf(stderr, "Usage: %s -i [path/to/image] -o [path/to/output/image]\nExitting...\n", argv[0]);
+                    exit(1);
+                }
+
+                input_file_path = optarg;
+                break;
+
+            // Output Image name
+            case 'o':
+                output_file_path = optarg;
+                break;
+
+            default:
+                    fprintf(stderr, "Usage: %s -i [path/to/image] -o [path/to/output/image]\nExitting...\n", argv[0]);
+                    exit(1);
+        }
+    }
 
     // Check CUDA device availability.
     int deviceCount = 0;
@@ -84,17 +70,10 @@ int main() {
     // 1. Load the input image.
     MyImage imageObj;
     MyImage* image = &imageObj;
-    if (readPgm(INPUT_FILENAME, image) == -1) {
+    if (readPgm(input_file_path, image) == -1) {
         printf("Unable to open input image\n");
         return 1;
     }
-
-    // (Optional) Save a test copy of the input image.
-    printf("-- saving test copy of input image --\n");
-    if (writePgm("TestOutput.pgm", image) == -1)
-        printf("Unable to save test output image\n");
-    else
-        printf("-- test image saved as TestOutput.pgm --\n");
 
     // 2. Compute integral images.
     MyIntImage sumObj, sqsumObj;
@@ -209,11 +188,11 @@ int main() {
 
     // 9. Save the output image.
     printf("-- saving output --\n");
-    int flag = writePgm(OUTPUT_FILENAME, image);
+    int flag = writePgm(output_file_path, image);
     if (flag == -1)
         printf("Unable to save output image\n");
     else
-        printf("-- image saved as %s --\n", OUTPUT_FILENAME);
+        printf("-- image saved as %s --\n", output_file_path);
 
     // 10. Clean up.
     releaseTextClassifier(cascade);
@@ -228,4 +207,56 @@ int main() {
     freeSumImage(&scaledSqSum);
 
     return 0;
+}
+
+
+// Helper function to scan classifier data and compute the extra offsets (in x and y)
+// that account for all rectangle extents beyond the base detection window.
+void computeExtraOffsets(const myCascade* cascade, int* extra_x, int* extra_y) {
+    *extra_x = 0;
+    *extra_y = 0;
+    int totalRectElems = cascade->total_nodes * 12;
+    for (int i = 0; i < totalRectElems; i += 4) {
+        int rx = cascade->rectangles_array[i];
+        int ry = cascade->rectangles_array[i + 1];
+        int rw = cascade->rectangles_array[i + 2];
+        int rh = cascade->rectangles_array[i + 3];
+        if (rx == 0 && ry == 0 && rw == 0 && rh == 0)
+            continue;
+        int current_right = rx + rw;
+        int current_bottom = ry + rh;
+        if (current_right > *extra_x)
+            *extra_x = current_right;
+        if (current_bottom > *extra_y)
+            *extra_y = current_bottom;
+    }
+}
+
+// Helper function to print a subset of values from an integral image.
+void debugPrintIntegralImageGPU(MyIntImage* img, int numSamples) {
+    int width = img->width;
+    int height = img->height;
+    int total = width * height;
+
+#ifdef FINAL_DEBUG
+    printf("GPU Integral image summary: width = %d, height = %d, total values = %d\n", width, height, total);
+#endif
+
+#ifdef FINAL_DEBUG
+    // Print the four corner values
+    printf("Top-left (index 0): %d\n", img->data[0]);
+    printf("Top-right (index %d): %d\n", width - 1, img->data[width - 1]);
+    printf("Bottom-left (index %d): %d\n", (height - 1) * width, img->data[(height - 1) * width]);
+    printf("Bottom-right (index %d): %d\n", total - 1, img->data[total - 1]);
+#endif
+
+    int step = total / numSamples;
+    if (step < 1)
+        step = 1;
+#ifdef FINAL_DEBUG
+    printf("Printing %d sample values (every %d-th value):\n", numSamples, step);
+    for (int i = 0; i < total; i += step) {
+        printf("Index %d: %d\n", i, img->data[i]);
+    }
+#endif
 }

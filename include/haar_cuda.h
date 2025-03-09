@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "image_cuda.h"
-#include "rectangles.h"
+#include "rectangles_cuda.h"
 
 #ifdef __cplusplus
 #include <vector>

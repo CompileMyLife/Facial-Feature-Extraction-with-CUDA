@@ -42,44 +42,65 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
+#include <unistd.h>
+
 #include "image.h"
-#include "stdio-wrapper.h"
 #include "haar.h"
 
-#define INPUT_FILENAME "Face.pgm"
-#define OUTPUT_FILENAME "Output.pgm"
-
-using namespace std;
-
-
-int main (int argc, char *argv[])
+int main(int argc, char** argv)
 {
 
 	int flag;
+    int opt;
+    char* input_file_path = NULL;
+    char* output_file_path = NULL;
 
 	int mode = 1;
 	int i;
 
+    printf("-- entering main function --\n");
+
+    while((opt = getopt(argc, argv, "i:o:")) != -1) {
+        switch(opt) {
+            // Input Image
+            case 'i':
+                // Check that the path doesn't exist
+                if (access(optarg, F_OK) != 0) {
+                    fprintf(stderr, "ERROR: path to file %s does not exist\n", optarg);
+                    fprintf(stderr, "Usage: %s -i [path/to/image] -o [path/to/output/image]\nExitting...\n", argv[0]);
+                    exit(1);
+                }
+
+                input_file_path = optarg;
+                break;
+
+            // Output Image name
+            case 'o':
+                output_file_path = optarg;
+                break;
+
+            default:
+                    fprintf(stderr, "Usage: %s -i [path/to/image] -o [path/to/output/image]\nExitting...\n", argv[0]);
+                    exit(1);
+        }
+    }
+
 	/* detection parameters */
 	float scaleFactor = 1.2;
 	int minNeighbours = 1;
-
-
-	printf("-- entering main function --\r\n");
 
 	printf("-- loading image --\r\n");
 
 	MyImage imageObj;
 	MyImage *image = &imageObj;               //get address of image in memory
 
-	flag = readPgm((char *)"Face.pgm", image);//read the .pgm image
+	flag = readPgm(input_file_path, image);//read the .pgm image
 	if (flag == -1)
 	{
 		printf( "Unable to open input image\n");
 		return 1;
 	}
-
-    //flag = writePgm((char *)OUTPUT_FILENAME, image);//debug the windows readPgm() and writePgm functions in image.c
 
 	printf("-- loading cascade classifier --\r\n");
 
@@ -94,8 +115,9 @@ int main (int argc, char *argv[])
 	cascade->orig_window_size.height = 24;  //original window height
 	cascade->orig_window_size.width = 24;   //original window width
 
-
-	readTextClassifier();
+    printf("-- loading cascade classifier --\n");
+	readTextClassifier(cascade);
+    printf("-- cascade classifier loaded --\n");
 
 	std::vector<MyRect> result;
 
@@ -110,13 +132,13 @@ int main (int argc, char *argv[])
 	}
 
 	printf("-- saving output --\r\n");
-	flag = writePgm((char *)OUTPUT_FILENAME, image);
+	flag = writePgm(output_file_path, image);
 
 	printf("-- image saved --\r\n");
 
 	/* delete image and free classifier */
-	releaseTextClassifier();
+	releaseTextClassifier(cascade);
 	freeImage(image);
 
-	return 0;
+    return 0;
 }

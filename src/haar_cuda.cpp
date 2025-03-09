@@ -32,8 +32,6 @@
  */
 
 #include "haar_cuda.h"
-#include "image_cuda.h"
-#include <stdio.h>
 #include <cmath>
 
 #define DEBUG_PRINT 1
