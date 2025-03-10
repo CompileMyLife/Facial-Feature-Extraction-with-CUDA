@@ -1,13 +1,13 @@
 # C++ Compiler and Flags
 CC      := g++
-CFLAGS  := -std=c++14 -Wall
+CFLAGS  := -std=c++14 -Wall -lrt
 
 # CUDA Compiler and Flags
 # Google Colab offers T4 GPUs which are the sm_75 compute capability. Since we had a
 # a GPU on hand with sm_86 compute capability, we prioritized that if it exists
 NCC     := nvcc
 NLIB    := /usr/local/cuda/lib64
-NFLAGS  := -std=c++14 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_75,code=sm_75 -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
+NFLAGS  := -std=c++14 -lrt -gencode arch=compute_86,code=sm_86 -gencode arch=compute_75,code=sm_75 -Xcompiler "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_ADAPTOR_TYPEDEPRECATION_WARNINGS"
 
 # Directories
 G_SRC_DIR := ./src

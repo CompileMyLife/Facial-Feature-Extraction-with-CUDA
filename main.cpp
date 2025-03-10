@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <vector>
 #include <cuda_runtime.h>
+#include <assert.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "image_cuda.h"
 #include "haar_cuda.h"
@@ -27,11 +30,13 @@ void debugPrintIntegralImageGPU(MyIntImage* img, int numSamples);
 
 int main(int argc, char** argv) {
     int opt;
+    int rc;
 
     char* input_file_path = NULL;
     char* output_file_path = NULL;
 
-    printf("-- entering main function --\n");
+    struct timespec t_start;
+    struct timespec t_end;  
 
     while((opt = getopt(argc, argv, "i:o:")) != -1) {
         switch(opt) {
@@ -57,6 +62,8 @@ int main(int argc, char** argv) {
                     exit(1);
         }
     }
+
+    printf("-- entering main function --\n");
 
     // Check CUDA device availability.
     int deviceCount = 0;
@@ -134,6 +141,11 @@ int main(int argc, char** argv) {
     std::vector<MyRect> allGpuCandidates;
     int iter_counter = 1;
     factor = 1.0f;
+
+    // Start timer
+    rc = clock_gettime(CLOCK_REALTIME, &t_start);
+    assert(rc == 0);
+
     while (true) {
         int newWidth = (int)(image->width / factor);
         int newHeight = (int)(image->height / factor);
@@ -175,7 +187,15 @@ int main(int argc, char** argv) {
         factor *= 1.2f;
     }
 
-    printf("CUDA detection detected %zu candidates.\n", allGpuCandidates.size());
+    // End Timer
+    rc = clock_gettime(CLOCK_REALTIME, &t_end);
+    assert(rc == 0);
+
+    unsigned long long int runtime = 1000000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_nsec - t_start.tv_nsec; 
+    
+    printf("\nCUDA detection detected %zu candidates.\n", allGpuCandidates.size());
+    printf("Time = %lld nanoseconds\t(%lld.%09lld sec)\n\n", runtime, runtime / 1000000000, runtime % 1000000000);
+
     for (size_t i = 0; i < allGpuCandidates.size(); i++) {
         printf("[DEBUG] CUDA Candidate %zu: x=%d, y=%d, width=%d, height=%d\n",
             i, allGpuCandidates[i].x, allGpuCandidates[i].y, allGpuCandidates[i].width, allGpuCandidates[i].height);

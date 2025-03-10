@@ -59,15 +59,6 @@ float n_features = 0;
 
 int iter_counter = 0;
 
-/* compute integral images */
-void integralImages( MyImage *src, MyIntImage *sum, MyIntImage *sqsum );
-
-/* scale down the image */
-void ScaleImage_Invoker( myCascade* _cascade, float _factor, int sum_row, int sum_col, std::vector<MyRect>& _vec);
-
-/* compute scaled image */
-void nearestNeighbor (MyImage *src, MyImage *dst);
-
 /* rounding function */
 inline  int  myRound( float value )
 {
@@ -463,15 +454,16 @@ int runCascadeClassifier( myCascade* _cascade, MyPoint pt, int start_stage )
 
       for( j = 0; j < stages_array[i]; j++ )
 	{
-	  /**************************************************
-	   * Send the shifted window to a haar filter.
-	   **************************************************/
-	  stage_sum += evalWeakClassifier(variance_norm_factor, p_offset, haar_counter, w_index, r_index);
-	  n_features++;
-	  haar_counter++;
-	  w_index+=3;
-	  r_index+=12;
-	} /* end of j loop */
+        /**************************************************
+         * Send the shifted window to a haar filter.
+         **************************************************/
+      
+        stage_sum += evalWeakClassifier(variance_norm_factor, p_offset, haar_counter, w_index, r_index);
+        n_features++;
+        haar_counter++;
+        w_index+=3;
+        r_index+=12;
+    } /* end of j loop */
 
       /**************************************************************
        * threshold of the stage.
@@ -655,7 +647,7 @@ void nearestNeighbor (MyImage *src, MyImage *dst)
     }
 }
 
-void readTextClassifier(myCascade * cascade)
+void readTextClassifier(void)//(myCascade * cascade)
 {
   /*number of stages of the cascade classifier*/
   int stages;
@@ -788,15 +780,15 @@ void readTextClassifier(myCascade * cascade)
 }
 
 
-void releaseTextClassifier(myCascade* cascade)
+void releaseTextClassifier(void)
 {
-  free(cascade->stages_array);
-  free(cascade->rectangles_array);
-  free(cascade->scaled_rectangles_array);
-  free(cascade->weights_array);
-  free(cascade->tree_thresh_array);
-  free(cascade->alpha1_array);
-  free(cascade->alpha2_array);
-  free(cascade->stages_thresh_array);
+  free(stages_array);
+  free(rectangles_array);
+  free(scaled_rectangles_array);
+  free(weights_array);
+  free(tree_thresh_array);
+  free(alpha1_array);
+  free(alpha2_array);
+  free(stages_thresh_array);
 }
 /* End of file. */

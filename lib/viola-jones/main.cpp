@@ -7,8 +7,7 @@
 *  haar.cpp, ScaleImage_Invoker(), line546 //changed y <= y2 ...to... y <= y2-1 //potential memory fault noted in evalWeakClassifier() function within haar.cpp ... this is a result of indexing an array not allocated in memory??? //This did not occur in Linux version
 */
 
-/*
- *  TU Eindhoven
+/* *  TU Eindhoven
  *  Eindhoven, The Netherlands
  *
  *  Name            :   faceDetection.cpp
@@ -44,6 +43,9 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <assert.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "image.h"
 #include "haar.h"
@@ -53,13 +55,15 @@ int main(int argc, char** argv)
 
 	int flag;
     int opt;
+    int rc;
+
     char* input_file_path = NULL;
     char* output_file_path = NULL;
 
-	int mode = 1;
-	int i;
+    struct timespec t_start;
+    struct timespec t_end;  
 
-    printf("-- entering main function --\n");
+	int i;
 
     while((opt = getopt(argc, argv, "i:o:")) != -1) {
         switch(opt) {
@@ -85,6 +89,9 @@ int main(int argc, char** argv)
                     exit(1);
         }
     }
+    
+    printf("-- entering main function --\n");
+
 
 	/* detection parameters */
 	float scaleFactor = 1.2;
@@ -102,8 +109,6 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	printf("-- loading cascade classifier --\r\n");
-
 	myCascade cascadeObj;
 	myCascade *cascade = &cascadeObj;
 	MySize minSize = {20, 20};
@@ -116,19 +121,33 @@ int main(int argc, char** argv)
 	cascade->orig_window_size.width = 24;   //original window width
 
     printf("-- loading cascade classifier --\n");
-	readTextClassifier(cascade);
+	readTextClassifier();
     printf("-- cascade classifier loaded --\n");
 
 	std::vector<MyRect> result;
 
 	printf("-- detecting faces --\r\n");
 
+    // Start Timer
+    rc = clock_gettime(CLOCK_REALTIME, &t_start);
+    assert(rc == 0);
+
 	result = detectObjects(image, minSize, maxSize, cascade, scaleFactor, minNeighbours);
 
-	for(i = 0; i < result.size(); i++ )
+    rc = clock_gettime(CLOCK_REALTIME, &t_end);
+    assert(rc == 0);
+
+    unsigned long long int runtime = 1000000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_nsec - t_start.tv_nsec; 
+
+    printf("\nCPU detection detected %ld candidates\n", result.size());
+    printf("Time = %lld nanoseconds\t(%lld.%09lld sec)\n\n", runtime, runtime / 1000000000, runtime % 1000000000);
+
+	for(i = 0; i < (int)result.size(); i++)
 	{
 		MyRect r = result[i];
 		drawRectangle(image, r);
+		printf("Detected %d: x=%d, y=%d, width=%d, height=%d\n", 
+                i, r.x, r.y, r.width, r.height);
 	}
 
 	printf("-- saving output --\r\n");
@@ -137,7 +156,7 @@ int main(int argc, char** argv)
 	printf("-- image saved --\r\n");
 
 	/* delete image and free classifier */
-	releaseTextClassifier(cascade);
+	releaseTextClassifier();
 	freeImage(image);
 
     return 0;
