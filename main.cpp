@@ -189,6 +189,9 @@ int main(int argc, char** argv) {
         factor *= 1.2f;
     }
 
+    // Delete duplicates.
+    groupRectangles(allGpuCandidates, MINNEIGHBORS, 0.4f);
+
     // End Timer
     rc = clock_gettime(CLOCK_REALTIME, &t_end);
     assert(rc == 0);
@@ -199,12 +202,9 @@ int main(int argc, char** argv) {
     printf("Time = %lld nanoseconds\t(%lld.%09lld sec)\n\n", runtime, runtime / 1000000000, runtime % 1000000000);
 
     for (size_t i = 0; i < allGpuCandidates.size(); i++) {
-        //printf("[DEBUG] CUDA Candidate %zu: x=%d, y=%d, width=%d, height=%d\n",
-            i, allGpuCandidates[i].x, allGpuCandidates[i].y, allGpuCandidates[i].width, allGpuCandidates[i].height);
+        printf("[DEBUG] CUDA Candidate %zu: x=%d, y=%d, width=%d, height=%d\n",
+           i, allGpuCandidates[i].x, allGpuCandidates[i].y, allGpuCandidates[i].width, allGpuCandidates[i].height);
     }
-
-    // Delete duplicates.
-    groupRectangles(allGpuCandidates, MINNEIGHBORS, 0.4f);
 
     // 8. Draw candidate face boxes on the original image.
     for (size_t i = 0; i < allGpuCandidates.size(); i++) {
