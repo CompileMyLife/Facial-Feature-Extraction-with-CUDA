@@ -134,6 +134,8 @@ int main(int argc, char** argv)
 
 	result = detectObjects(image, minSize, maxSize, cascade, scaleFactor, minNeighbours);
 
+
+	// End Timer
     rc = clock_gettime(CLOCK_REALTIME, &t_end);
     assert(rc == 0);
 
