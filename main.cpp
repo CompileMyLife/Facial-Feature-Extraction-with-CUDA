@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
             allGpuCandidates.insert(allGpuCandidates.end(), gpuCandidates.begin(), gpuCandidates.end());
         }
         else {
-            printf("Scale factor %f too high for valid detection window at this iteration.\n", factor);
+           // printf("Scale factor %f too high for valid detection window at this iteration.\n", factor);
         }
         factor *= 1.2f;
     }
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
     printf("Time = %lld nanoseconds\t(%lld.%09lld sec)\n\n", runtime, runtime / 1000000000, runtime % 1000000000);
 
     for (size_t i = 0; i < allGpuCandidates.size(); i++) {
-        printf("[DEBUG] CUDA Candidate %zu: x=%d, y=%d, width=%d, height=%d\n",
+        //printf("[DEBUG] CUDA Candidate %zu: x=%d, y=%d, width=%d, height=%d\n",
             i, allGpuCandidates[i].x, allGpuCandidates[i].y, allGpuCandidates[i].width, allGpuCandidates[i].height);
     }
 
