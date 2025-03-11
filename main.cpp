@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
     }
 
     // Delete duplicates.
-    groupRectangles(allGpuCandidates, MINNEIGHBORS, 0.4f);
+    //groupRectangles(allGpuCandidates, MINNEIGHBORS, 0.4f);
 
     // End Timer
     rc = clock_gettime(CLOCK_REALTIME, &t_end);
