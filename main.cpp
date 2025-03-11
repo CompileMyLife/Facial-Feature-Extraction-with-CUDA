@@ -13,6 +13,8 @@
 #include "haar_cuda.h"
 #include "cuda_detect.cuh"  // runDetection is declared here.
 
+#define MINNEIGHBORS 3
+
 //#define FINAL_DEBUG
 
 extern int iter_counter;
@@ -202,7 +204,7 @@ int main(int argc, char** argv) {
     }
 
     // Delete duplicates.
-    groupRectangles(allGpuCandidates, minNeighbors, 0.4f);
+    groupRectangles(allGpuCandidates, MINNEIGHBORS, 0.4f);
 
     // 8. Draw candidate face boxes on the original image.
     for (size_t i = 0; i < allGpuCandidates.size(); i++) {
