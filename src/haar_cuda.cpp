@@ -292,7 +292,7 @@ void setImageForCascadeClassifier(myCascade* _cascade, MyIntImage* _sum, MyIntIm
     // Check for zero dimensions.
     if (equRect.width == 0 || equRect.height == 0)
     {
-        printf("ERROR: Detection window has zero dimension(s): width=%d, height=%d\n", equRect.width, equRect.height);
+       // printf("ERROR: Detection window has zero dimension(s): width=%d, height=%d\n", equRect.width, equRect.height);
     }
 
     int window_area = equRect.width * equRect.height;

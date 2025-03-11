@@ -201,6 +201,9 @@ int main(int argc, char** argv) {
             i, allGpuCandidates[i].x, allGpuCandidates[i].y, allGpuCandidates[i].width, allGpuCandidates[i].height);
     }
 
+    // Delete duplicates.
+    groupRectangles(allGpuCandidates, minNeighbors, 0.4f);
+
     // 8. Draw candidate face boxes on the original image.
     for (size_t i = 0; i < allGpuCandidates.size(); i++) {
         drawRectangle(image, allGpuCandidates[i]);
