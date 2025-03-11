@@ -13,7 +13,7 @@
 #include "haar_cuda.h"
 #include "cuda_detect.cuh"  // runDetection is declared here.
 
-#define MINNEIGHBORS 3
+#define MINNEIGHBORS 1
 
 //#define FINAL_DEBUG
 
