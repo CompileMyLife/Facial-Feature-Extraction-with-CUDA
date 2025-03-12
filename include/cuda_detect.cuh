@@ -1,3 +1,15 @@
+// ==============================================================================================
+// Filename: cuda_detect.h
+//
+// Description:
+//     Header file declaring the interface for CUDA-based Viola-Jones detection functions.
+//     It includes necessary CUDA and project-specific headers, defines conditional compilation
+//     for C++, and provides the runDetection function declaration.
+//
+// Date: 03.12.25
+// Authors: Ibrahim Binmahfood, Kunjan Vyas, Robert Wilcox
+// -----------------------------------------------------------------------------
+
 #ifndef CUDA_DETECT_H
 #define CUDA_DETECT_H
 

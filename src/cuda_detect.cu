@@ -1,9 +1,16 @@
 
-// cuda_detect.cu
+// ==============================================================================================
+// Filename: cuda_detect.cu
 //
-// This file implements a CUDA‐accelerated sliding window detector for the Viola‐Jones algorithm.
-// This version implements the real weak classifier evaluation and uses Unified Memory for the integral images,
-// cascade structure, and detection results.
+// Description:
+//     Implements a CUDA-accelerated sliding window detector for the Viola-Jones algorithm.
+//     This implementation evaluates the real weak classifiers and leverages Unified Memory
+//     for integral images, cascade structures, and detection results.
+//
+// Date: 03.12.25
+// Authors: Ibrahim Binmahfood, Kunjan Vyas, Robert Wilcox
+// -----------------------------------------------------------------------------
+
 #include "cuda_detect.cuh"  // Include header file for CUDA detection
 #include <stdio.h>          // Standard I/O
 #include <math.h>           // Math functions

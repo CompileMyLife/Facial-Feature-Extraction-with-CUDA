@@ -29,6 +29,9 @@
  * In other words, you are welcome to use, share and improve this program.
  * You are forbidden to forbid anyone else to use, share and improve
  * what you give them.   Happy coding!
+ * 
+ * Modified 03.12.25 by: Ibrahim Binmahfood, Kunjan Vyas, Robert Wilcox
+ * to include CUDA code for parallel processing
  */
 
 #ifndef __IMAGE_CUDA_H__
