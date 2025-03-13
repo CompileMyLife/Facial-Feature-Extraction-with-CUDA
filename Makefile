@@ -82,7 +82,7 @@ test_cpu:
 	./facial_extract_cpu -i PGM_Images/photo5_7_people.pgm -o ./Detected_Images/cpu/photo5_7_people.pgm > ./logs/cpu/photo5_7_people.log
 	./facial_extract_cpu -i PGM_Images/photo6_4_people.pgm -o ./Detected_Images/cpu/photo6_4_people.pgm > ./logs/cpu/photo6_4_people.log
 	./facial_extract_cpu -i PGM_Images/photo7_4_people.pgm -o ./Detected_Images/cpu/photo7_4_people.pgm > ./logs/cpu/photo7_4_people.log
-	./facial_extract_cpu -i PGM_Images/photo8_4_people.pgm -o ./Detected_Images/cpu/photo8_4_people.pgm > ./logs/cpu/photo8_4_peoplelog
+	./facial_extract_cpu -i PGM_Images/photo8_4_people.pgm -o ./Detected_Images/cpu/photo8_4_people.pgm > ./logs/cpu/photo8_4_people.log
 	./facial_extract_cpu -i PGM_Images/photo9_2_people.pgm -o ./Detected_Images/cpu/photo9_2_people.pgm > ./logs/cpu/photo9_2_people.log
 	./facial_extract_cpu -i PGM_Images/photo10_5_people.pgm -o ./Detected_Images/cpu/photo10_5_people.pgm > ./logs/cpu/photo10_5_people.log
 
@@ -97,7 +97,7 @@ test_gpu:
 	./facial_extract_gpu -i PGM_Images/photo5_7_people.pgm -o ./Detected_Images/gpu/photo5_7_people.pgm > ./logs/gpu/photo5_7_people.log
 	./facial_extract_gpu -i PGM_Images/photo6_4_people.pgm -o ./Detected_Images/gpu/photo6_4_people.pgm > ./logs/gpu/photo6_4_people.log
 	./facial_extract_gpu -i PGM_Images/photo7_4_people.pgm -o ./Detected_Images/gpu/photo7_4_people.pgm > ./logs/gpu/photo7_4_people.log
-	./facial_extract_gpu -i PGM_Images/photo8_4_people.pgm -o ./Detected_Images/gpu/photo8_4_people.pgm > ./logs/gpu/photo8_4_peoplelog
+	./facial_extract_gpu -i PGM_Images/photo8_4_people.pgm -o ./Detected_Images/gpu/photo8_4_people.pgm > ./logs/gpu/photo8_4_people.log
 	./facial_extract_gpu -i PGM_Images/photo9_2_people.pgm -o ./Detected_Images/gpu/photo9_2_people.pgm > ./logs/gpu/photo9_2_people.log
 	./facial_extract_gpu -i PGM_Images/photo10_5_people.pgm -o ./Detected_Images/gpu/photo10_5_people.pgm > ./logs/gpu/photo10_5_people.log
 
