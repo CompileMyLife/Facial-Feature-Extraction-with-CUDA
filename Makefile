@@ -42,15 +42,17 @@ C_OBJS    := $(C_OBJS_C) $(C_OBJS_CPP)
 # Don't allow files in directory to be names clean or default or build
 .PHONY: clean default build test perf
 
-default: build
+default: build test perf
 
 build: build_gpu build_cpu
 
 build_cpu: ./lib/viola-jones/main.cpp $(C_OBJS)
+	@echo "Building CPU build..."
 	$(CC) $(CFLAGS) -I $(C_INC_DIR) $^ -o facial_extract_cpu
 	mkdir -p ./logs/cpu
 
 build_gpu: main.cpp $(G_OBJS)
+	@echo "Building GPU build..."
 	$(NCC) $(NFLAGS) -I $(NLIB) -I $(G_INC_DIR) $^ -o facial_extract_gpu
 	mkdir -p ./logs/gpu
 
@@ -73,7 +75,7 @@ test: test_cpu test_gpu
 
 test_cpu:
 	@echo "Testing CPU runs on images in PGM_Images/..."
-	@echo "Logs are store in logs/cpu/"
+	@echo "Logs are stored in logs/cpu/"
 	mkdir -p ./Detected_Images/cpu/
 	./facial_extract_cpu -i PGM_Images/photo1_6_people.pgm -o ./Detected_Images/cpu/photo1_6_people.pgm > ./logs/cpu/photo1_6_people.log
 	./facial_extract_cpu -i PGM_Images/photo2_4_people.pgm -o ./Detected_Images/cpu/photo2_4_people.pgm > ./logs/cpu/photo2_4_people.log
@@ -88,7 +90,7 @@ test_cpu:
 
 test_gpu:
 	@echo "Testing GPU runs on images in PGM_Images/..."
-	@echo "Logs are store in logs/gpu/"
+	@echo "Logs are stored in logs/gpu/"
 	mkdir -p ./Detected_Images/gpu/
 	./facial_extract_gpu -i PGM_Images/photo1_6_people.pgm -o ./Detected_Images/gpu/photo1_6_people.pgm > ./logs/gpu/photo1_6_people.log
 	./facial_extract_gpu -i PGM_Images/photo2_4_people.pgm -o ./Detected_Images/gpu/photo2_4_people.pgm > ./logs/gpu/photo2_4_people.log
@@ -102,7 +104,9 @@ test_gpu:
 	./facial_extract_gpu -i PGM_Images/photo10_5_people.pgm -o ./Detected_Images/gpu/photo10_5_people.pgm > ./logs/gpu/photo10_5_people.log
 
 perf:
-	./run_parser.py logs_dir=./logs
+	@echo "Parsing logs..."
+	@echo "Plots generated in logs/plots/"
+	python3 run_parser.py ./logs/cpu ./logs/gpu ./logs
 
 clean:
 	$(RM) -rf ./logs ./Detected_Images ./facial_extract* $(G_SRC_DIR)/*.o $(G_INC_DIR)/*.h.gch $(C_SRC_DIR)/*.o $(C_INC_DIR)/*.h.gch
