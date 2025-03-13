@@ -1,0 +1,15 @@
+-- entering main function --
+-- loading image --
+
+Reading image file: PGM_Images/photo2_4_people.pgm
+-- loading cascade classifier --
+-- cascade classifier loaded --
+-- detecting faces --
+
+CPU detection detected 2 candidates
+Time = 607400016 nanoseconds	(0.607400016 sec)
+
+Detected 0: x=287, y=117, width=103, height=103
+Detected 1: x=135, y=199, width=112, height=112
+-- saving output --
+-- image saved --

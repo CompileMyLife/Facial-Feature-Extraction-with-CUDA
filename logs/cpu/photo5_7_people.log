@@ -1,0 +1,19 @@
+-- entering main function --
+-- loading image --
+
+Reading image file: PGM_Images/photo5_7_people.pgm
+-- loading cascade classifier --
+-- cascade classifier loaded --
+-- detecting faces --
+
+CPU detection detected 6 candidates
+Time = 636827222 nanoseconds	(0.636827222 sec)
+
+Detected 0: x=261, y=204, width=31, height=31
+Detected 1: x=252, y=158, width=32, height=32
+Detected 2: x=314, y=167, width=31, height=31
+Detected 3: x=370, y=237, width=29, height=29
+Detected 4: x=385, y=158, width=33, height=33
+Detected 5: x=467, y=148, width=33, height=33
+-- saving output --
+-- image saved --
