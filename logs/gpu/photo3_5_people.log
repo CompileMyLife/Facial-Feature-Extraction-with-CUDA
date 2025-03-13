@@ -1,0 +1,19 @@
+-- entering main function --
+Found 1 CUDA device(s).
+
+Reading image file: PGM_Images/photo3_5_people.pgm
+-- loading cascade classifier --
+-- cascade classifier loaded --
+cascade->scaled_rectangles_array is NOT NULL after readTextClassifier: 0x7c55cebfd010
+-- linking integral images to cascade --
+-- After setImageForCascadeClassifier call --
+-- integral images linked to cascade --
+Computed extra offsets: extra_x = 24, extra_y = 24
+Adjusted detection window size: (48, 48)
+
+CUDA detection detected 1 candidates.
+Time = 207515940 nanoseconds	(0.207515940 sec)
+
+[DEBUG] CUDA Candidate 0: x=72, y=21, width=40, height=40
+-- saving output --
+-- image saved as ./Detected_Images/gpu/photo3_5_people.pgm --
