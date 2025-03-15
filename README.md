@@ -18,11 +18,11 @@ Before you can build and run the code, you need the following:
 
 **Build with `make`:** Use the provided `Makefile` to build the project:
 
-    ```bash
-    make
-    ```
+```bash
+$ make
+```
 
-    This will create an executable file named `facial_extract_cpu` and `facial_extract_gpu`. Since the Makefile is automated, the testing of our dataset across both executables are logged in `logs/cpu` and `logs/gpu`. The detected (drawn rectangles on candidates) images are located in `Detected_Images/`. The data analysis script generates plots in `logs/plots`
+This will create an executable file named `facial_extract_cpu` and `facial_extract_gpu`. Since the Makefile is automated, the testing of our dataset across both executables are logged in `logs/cpu` and `logs/gpu`. The detected (drawn rectangles on candidates) images are located in `Detected_Images/`. The data analysis script generates plots in `logs/plots`
 
 ## Reference
 * [Viola-Jones-cpp](https://github.com/dev7saxena/Viola-Jones-cpp/tree/master)
