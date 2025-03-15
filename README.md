@@ -25,7 +25,6 @@ Before you can build and run the code, you need the following:
     This will create an executable file named `facial_extract_cpu` and `facial_extract_gpu`. Since the Makefile is automated, the testing of our dataset across both executables are logged in `logs/cpu` and `logs/gpu`. The detected (drawn rectangles on candidates) images are located in `Detected_Images/`. The data analysis script generates plots in `logs/plots`
 
 ## Reference
-## Reference
 * [Viola-Jones-cpp](https://github.com/dev7saxena/Viola-Jones-cpp/tree/master)
 ## License
 Please refer to the MIT license attached to this repository.
